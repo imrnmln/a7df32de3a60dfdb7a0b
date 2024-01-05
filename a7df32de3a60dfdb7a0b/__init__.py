@@ -1495,21 +1495,6 @@ def init_driver(
         if _COOKIE_FP is None or _COOKIE_FP == "":
             _COOKIE_FP = f"{_USERNAME}.pkl"
 
-        pluginfile = "proxy_auth_plugin.zip"
-        with zipfile.ZipFile(pluginfile, "w") as zp:
-            zp.writestr("manifest.json", manifest_json)
-            zp.writestr(
-                "background.js",
-                get_background_js(
-                    PROXY_HOST=_PROXY,
-                    PROXY_PORT=PROXY_PORT,
-                    PROXY_USER=PROXY_USERNAME,
-                    PROXY_PASS=PROXY_PASSWORD,
-                ),
-            )
-        logging.info(f"[Twitter] [MULTI ACCOUNTS] adding PROXY extension: {pluginfile}")
-        options.add_extension(pluginfile)
-
         logging.info(f"[Twitter] [MULTI ACCOUNTS] Selected Proxy: {_PROXY}")
         logging.info(
             f"[Twitter] [MULTI ACCOUNTS] Selected Account: {selected_proxy_account['email'], {selected_proxy_account['username']}, {print_first_and_last(selected_proxy_account['password'])}}"
