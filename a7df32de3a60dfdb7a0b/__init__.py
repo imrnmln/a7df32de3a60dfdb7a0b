@@ -67,6 +67,8 @@ _USERNAME = None
 _PASSWORD = None
 _COOKIE_FP = None
 driver = None
+keyword_now = None
+
 
 ##### SPECIAL MODE
 # TOP 222
@@ -1816,7 +1818,7 @@ def keep_scroling(
     save_images=False,
 ):
     """ scrolling function for tweets crawling"""
-    global driver, MAX_EXPIRATION_SECONDS, RATE_LIMITED
+    global driver, MAX_EXPIRATION_SECONDS, RATE_LIMITED, keyword_now
 
     save_images_dir = "/images"
     if save_images == True:
@@ -1871,7 +1873,9 @@ def keep_scroling(
         for card in page_cards:
             tweet = get_data(card)
             logging.debug("[XPath] Tweet visible currently = %s", len(page_cards))
-            if tweet:
+            # append tweet if keyword is not in username or display name (false positive). to minimize scraping because of this false positive
+            logging.debug("Scraping keyword, skip false positive %s", keyword_now)
+            if tweet and not keyword_now.lower() in tweet[0].lower():
                 # check if the tweet is unique
                 tweet_id = "".join(tweet[:-2])
                 last_date = str(tweet[2])
@@ -1997,6 +2001,7 @@ async def scrape_(
     global driver
     global status_rate_limited
     global ITEMS_PRODUCED_SESSION
+    global keyword_now
     if status_rate_limited:
         logging.debug(
             "[Twitter Status: Rate limited] Preventingly not starting scraping."
@@ -2006,9 +2011,10 @@ async def scrape_(
 
     if driver is None:
         raise CriticalFailure("Driver is not initialized properly!")
-
     logging.info("\tScraping latest tweets on keyword =  %s", keyword)
     # ------------------------- Variables :
+    # use this before append data tweet
+    keyword_now = keyword
     # list that contains all data
     data = []
     # unique tweet ids
