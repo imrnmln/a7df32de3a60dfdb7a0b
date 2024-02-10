@@ -1875,7 +1875,7 @@ def keep_scroling(
             logging.debug("[XPath] Tweet visible currently = %s", len(page_cards))
             # append tweet if keyword is not in username or display name (false positive). to minimize scraping because of this false positive
             logging.info("Scraping keyword, skip false positive %s", keyword_now)
-            if tweet and not keyword_now.lower() in tweet[0].lower():
+            if tweet and keyword_now.lower() in tweet[3].lower():
                 # check if the tweet is unique
                 tweet_id = "".join(tweet[:-2])
                 last_date = str(tweet[2])
