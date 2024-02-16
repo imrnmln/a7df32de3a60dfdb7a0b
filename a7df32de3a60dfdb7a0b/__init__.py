@@ -73,6 +73,10 @@ keyword_now = None
 ##### SPECIAL MODE
 # TOP 222
 SPECIAL_KEYWORDS_LIST = [    
+    "paris2024",
+    "paris2024",
+    "olympic",
+    "olympic",
     "Acura",
     "Alfa Romeo",
     "Aston Martin",
@@ -102,6 +106,8 @@ SPECIAL_KEYWORDS_LIST = [
     "Lotus",
     "Maserati",
     "Mazda",
+    "Taiko",
+    "Taiko labs",
     "McLaren",
     "Mercedes-Benz",
     "MINI",
