@@ -1907,7 +1907,7 @@ def keep_scroling(
                 tweet_content = str(tweet[3])
                 tweet_author = str(tweet[0])
                 if ( keyword_now.lower() in tweet_author.lower() and not keyword_now.lower() in tweet_content.lower()):
-                    logging.info("Keyword not found in text, but in author's name,", tweet_author)
+                    logging.info("Keyword not found in text, but in author's name %s", tweet_author)
                     continue
                     
                 if not tweet_content:
