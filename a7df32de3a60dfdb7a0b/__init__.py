@@ -1550,6 +1550,7 @@ def init_driver(
         driver_path = '/usr/local/bin/chromedriver'
         logging.info(f"Opening driver from path = {driver_path}")
         driver = webdriver.Chrome(service=Service(driver_path), options=options)
+        driver.maximize_window()
     except Exception as e:
         logging.exception("[TWITTER] [CRITICAL FAILURE] Failure to initialize the chrome driver")
         raise CriticalFailure("")
