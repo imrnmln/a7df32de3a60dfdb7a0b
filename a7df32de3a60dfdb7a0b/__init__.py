@@ -1903,6 +1903,16 @@ def keep_scroling(
             # append tweet if keyword is not in username or display name (false positive). to minimize scraping because of this false positive
             logging.info("Scraping keyword, skip false positive %s", keyword_now)
             if tweet:
+                # check if content empty or false positive
+                tweet_content = str(tweet[3])
+                tweet_author = str(tweet[0])
+                if ( keyword_now.lower() in tweet_author.lower() and not keyword_now.lower() in tweet_content.lower()):
+                    logging.info("Keyword not found in text, but in author's name,", tweet_author)
+                    continue
+                    
+                if not tweet_content:
+                    logging.info("Tweet content empty")
+                    continue
                 # check if the tweet is unique
                 tweet_id = "".join(tweet[:-2])
                 last_date = str(tweet[2])
