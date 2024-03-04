@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="a7df32de3a60dfdb7a0b",
-    version="0.11.2",
+    version="0.11.3",
     packages=find_packages(),
     install_requires=[
         "snscrape",
