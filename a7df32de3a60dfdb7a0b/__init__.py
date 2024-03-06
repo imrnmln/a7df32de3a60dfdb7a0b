@@ -1600,6 +1600,10 @@ def init_driver(
     logging.info("\tDisable automation extensions & flags")
     options.add_argument("--disable-dev-shm-usage")
     # options.add_argument("user-data-dir=selenium")
+    options.add_argument("start-maximized")
+    options.add_argument("disable-infobars")
+    options.add_argument("--disable-extensions")
+    options.add_argument('--disable-application-cache')
     selected_user_agent = random.choice(user_agents)
     options.add_argument(f"user-agent={selected_user_agent}")
     logging.info("\tselected_user_agent :  %s", selected_user_agent)
@@ -2007,13 +2011,13 @@ def keep_scroling(
                 # check if content empty or false positive
                 tweet_content = str(tweet[3])
                 tweet_author = str(tweet[0])
-                if ( keyword_now.lower() in tweet_author.lower() and not keyword_now.lower() in tweet_content.lower()):
-                    logging.info("Keyword not found in text, but in author's name %s", tweet_author)
-                    continue
+                #if ( keyword_now.lower() in tweet_author.lower() and not keyword_now.lower() in tweet_content.lower()):
+                #    logging.info("Keyword not found in text, but in author's name %s", tweet_author)
+                #    continue
                     
-                if not tweet_content:
-                    logging.info("Tweet content empty")
-                    continue
+                #if not tweet_content:
+                #    logging.info("Tweet content empty")
+                #    continue
                 # check if the tweet is unique
                 tweet_id = "".join(tweet[:-2])
                 last_date = str(tweet[2])
