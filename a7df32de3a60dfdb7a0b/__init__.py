@@ -1961,6 +1961,25 @@ def keep_scroling(
     successsive_old_tweets = 0
     while scrolling and tweet_parsed < limit:
         sleep(random.uniform(0.5, 1.5))
+        # minimize element before getting data (trial only)
+        driver.execute_script("""
+            document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
+                tweet.style.height = '10px';
+            });
+        """)
+        sleep(2)
+        driver.execute_script("""
+            document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
+                tweet.style.height = '10px';
+            });
+        """)
+        sleep(2)
+        driver.execute_script("""
+            document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
+                tweet.style.height = '10px';
+            });
+        """)
+        sleep(2)
         # get the card of tweets
         page_cards = driver.find_elements(
             by=By.XPATH, value='//article[@data-testid="tweet"]'
