@@ -1962,11 +1962,11 @@ def keep_scroling(
     while scrolling and tweet_parsed < limit:
         sleep(random.uniform(0.5, 1.5))
         # minimize element before getting data (trial only)
-        driver.execute_script("document.querySelector('[data-testid=\"sidebarColumn\"]').style.display = 'none';")
-        driver.execute_script("document.querySelector('[data-testid=\"primaryColumn\"]').style.maxWidth = '1300px';")
+        #driver.execute_script("document.querySelector('[data-testid="sidebarColumn"]').style.display = 'none';")
+        #driver.execute_script("document.querySelector('[data-testid="primaryColumn"]').style.maxWidth = '1300px';")
         driver.execute_script("""
             document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
-                tweet.style.height = '10px';
+                tweet.style.height = '20px';
             });
         """)
         sleep(2)
