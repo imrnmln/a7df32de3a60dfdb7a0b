@@ -1966,7 +1966,7 @@ def keep_scroling(
         #driver.execute_script("document.querySelector('[data-testid="primaryColumn"]').style.maxWidth = '1300px';")
         driver.execute_script("""
             document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
-                tweet.style.height = '20px';
+                tweet.style.height = '140px';
             });
         """)
         sleep(2)
