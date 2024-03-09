@@ -1716,7 +1716,7 @@ def log_search_page(
     )
     driver.get(path)
     sleep(1)
-    wait = WebDriverWait(driver, 5)
+    wait = WebDriverWait(driver, 10)
     primary_column = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-testid="primaryColumn"]')))
     driver.execute_script('arguments[0].style.width = "1300px";', primary_column)
     side_column = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-testid="sidebarColumn"]')))
