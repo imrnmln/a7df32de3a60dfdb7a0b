@@ -1716,6 +1716,17 @@ def log_search_page(
     )
     driver.get(path)
     sleep(1)
+    wait = WebDriverWait(driver, 5)
+    primary_column = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-testid="primaryColumn"]')))
+    driver.execute_script('arguments[0].style.width = "1300px";', primary_column)
+    side_column = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-testid="sidebarColumn"]')))
+    driver.execute_script('arguments[0].style.display = "none";', side_column)
+    sleep(1)
+    driver.execute_script("""
+            document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
+                tweet.style.height = '140px';
+            });
+        """)
 
     if "i/flow/login" in driver.current_url:
         logging.info("[TWITTER] Problem detected, interrupting session early.")
@@ -1960,7 +1971,7 @@ def keep_scroling(
     rate_limitation = False
     successsive_old_tweets = 0
     while scrolling and tweet_parsed < limit:
-        sleep(5)
+        sleep(1)
         # minimize element before getting data (trial only)
         # driver.execute_script("""
         # document.querySelector("[data-testid='sidebarColumn']").style.display = 'none';
@@ -1970,11 +1981,6 @@ def keep_scroling(
         # document.querySelector("[data-testid='primaryColumn']").style.maxWidth = '1300px';
         # """)
         # sleep(1)
-        driver.execute_script("""
-            document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
-                tweet.style.height = '140px';
-            });
-        """)
         sleep(2)
         # get the card of tweets
         page_cards = driver.find_elements(
