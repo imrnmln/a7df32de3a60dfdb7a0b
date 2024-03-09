@@ -1962,8 +1962,12 @@ def keep_scroling(
     while scrolling and tweet_parsed < limit:
         sleep(random.uniform(0.5, 1.5))
         # minimize element before getting data (trial only)
-        #driver.execute_script("document.querySelector('[data-testid="sidebarColumn"]').style.display = 'none';")
-        #driver.execute_script("document.querySelector('[data-testid="primaryColumn"]').style.maxWidth = '1300px';")
+        driver.execute_script("""
+        document.querySelector("[data-testid='sidebarColumn']").style.display = 'none';
+        """)
+        driver.execute_script("""
+        document.querySelector("[data-testid='primaryColumn']").style.maxWidth = '1300px';
+        """)
         driver.execute_script("""
             document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
                 tweet.style.height = '140px';
@@ -2013,7 +2017,7 @@ def keep_scroling(
                 )
         for card in page_cards:
             tweet = get_data(card)
-            logging.debug("[XPath] Tweet visible currently = %s", len(page_cards))
+            logging.info("[XPath] Tweet visible currently = %s", len(page_cards))
             # skip tweet if keyword is not in username or display name (false positive). to minimize scraping because of this false positive
             # logging.info("Scraping keyword, skip false positive %s", keyword_now)
             if tweet:
