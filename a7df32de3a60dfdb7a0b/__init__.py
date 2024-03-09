@@ -1960,14 +1960,16 @@ def keep_scroling(
     rate_limitation = False
     successsive_old_tweets = 0
     while scrolling and tweet_parsed < limit:
-        sleep(random.uniform(0.5, 1.5))
+        sleep(5)
         # minimize element before getting data (trial only)
         driver.execute_script("""
         document.querySelector("[data-testid='sidebarColumn']").style.display = 'none';
         """)
+        sleep(1)
         driver.execute_script("""
         document.querySelector("[data-testid='primaryColumn']").style.maxWidth = '1300px';
         """)
+        sleep(1)
         driver.execute_script("""
             document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
                 tweet.style.height = '140px';
