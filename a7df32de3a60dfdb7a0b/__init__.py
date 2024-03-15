@@ -1978,14 +1978,14 @@ def keep_scroling(
             # primary_column = wait.until(EC.presence_of_element_located((By.XPATH, '//div[data-testid="primaryColumn"]')))
             driver.execute_script("""document.querySelector("div[data-testid='primaryColumn']").style.width = "1300px";""")
         except:
-            logging.info("Primary column not found"))
+            logging.info("Primary column not found")
             
         try:
             WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//div[data-testid='sidebarColumn']")))
             # side_column = wait.until(EC.presence_of_element_located((By.XPATH, '//div[data-testid="sidebarColumn"]')))
             driver.execute_script("""document.querySelector("div[data-testid='sidebarColumn']").style.display = "none";""")
         except:
-            logging.info("Sidebar column not found"))
+            logging.info("Sidebar column not found")
         # side_column = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-testid="sidebarColumn"]')))
         # driver.execute_script('arguments[0].style.display = "none";', side_column)
         # sleep(1)
