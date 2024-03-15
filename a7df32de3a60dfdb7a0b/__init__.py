@@ -1973,14 +1973,27 @@ def keep_scroling(
         # wait = WebDriverWait(driver, 10)
         # primary_column = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-testid="primaryColumn"]')))
         # driver.execute_script('arguments[0].style.width = "1300px";', primary_column)
+        try:
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//div[data-testid='primaryColumn']")))
+            # primary_column = wait.until(EC.presence_of_element_located((By.XPATH, '//div[data-testid="primaryColumn"]')))
+            driver.execute_script("""document.querySelector("div[data-testid='primaryColumn']").style.width = "1300px";""")
+        except:
+            logging.info("Primary column not found"))
+            
+        try:
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//div[data-testid='sidebarColumn']")))
+            # side_column = wait.until(EC.presence_of_element_located((By.XPATH, '//div[data-testid="sidebarColumn"]')))
+            driver.execute_script("""document.querySelector("div[data-testid='sidebarColumn']").style.display = "none";""")
+        except:
+            logging.info("Sidebar column not found"))
         # side_column = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-testid="sidebarColumn"]')))
         # driver.execute_script('arguments[0].style.display = "none";', side_column)
         # sleep(1)
-        driver.execute_script("""
-                document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
-                    tweet.style.height = '140px';
-                });
-            """)
+        # driver.execute_script("""
+        #         document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
+        #             tweet.style.height = '150px';
+        #         });
+        #     """)
         sleep(2)
         # get the card of tweets
         page_cards = driver.find_elements(
