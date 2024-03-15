@@ -67,8 +67,6 @@ _USERNAME = None
 _PASSWORD = None
 _COOKIE_FP = None
 driver = None
-keyword_now = None
-
 
 ##### SPECIAL MODE
 # TOP 222
@@ -1950,7 +1948,7 @@ def keep_scroling(
     save_images=False,
 ):
     """ scrolling function for tweets crawling"""
-    global driver, MAX_EXPIRATION_SECONDS, RATE_LIMITED, keyword_now
+    global driver, MAX_EXPIRATION_SECONDS, RATE_LIMITED
 
     save_images_dir = "/images"
     if save_images == True:
@@ -1960,41 +1958,7 @@ def keep_scroling(
     rate_limitation = False
     successsive_old_tweets = 0
     while scrolling and tweet_parsed < limit:
-        sleep(1)
-        # minimize element before getting data (trial only)
-        # driver.execute_script("""
-        # document.querySelector("[data-testid='sidebarColumn']").style.display = 'none';
-        # """)
-        # sleep(1)
-        # driver.execute_script("""
-        # document.querySelector("[data-testid='primaryColumn']").style.maxWidth = '1300px';
-        # """)
-        # sleep(1)
-        # wait = WebDriverWait(driver, 10)
-        # primary_column = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-testid="primaryColumn"]')))
-        # driver.execute_script('arguments[0].style.width = "1300px";', primary_column)
-        try:
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//div[data-testid='primaryColumn']")))
-            # primary_column = wait.until(EC.presence_of_element_located((By.XPATH, '//div[data-testid="primaryColumn"]')))
-            driver.execute_script("""document.querySelector("div[data-testid='primaryColumn']").style.width = "1300px";""")
-        except:
-            logging.info("Primary column not found")
-            
-        try:
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//div[data-testid='sidebarColumn']")))
-            # side_column = wait.until(EC.presence_of_element_located((By.XPATH, '//div[data-testid="sidebarColumn"]')))
-            driver.execute_script("""document.querySelector("div[data-testid='sidebarColumn']").style.display = "none";""")
-        except:
-            logging.info("Sidebar column not found")
-        # side_column = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-testid="sidebarColumn"]')))
-        # driver.execute_script('arguments[0].style.display = "none";', side_column)
-        # sleep(1)
-        # driver.execute_script("""
-        #         document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
-        #             tweet.style.height = '150px';
-        #         });
-        #     """)
-        sleep(2)
+        sleep(random.uniform(0.5, 1.5))
         # get the card of tweets
         page_cards = driver.find_elements(
             by=By.XPATH, value='//article[@data-testid="tweet"]'
@@ -2038,20 +2002,8 @@ def keep_scroling(
                 )
         for card in page_cards:
             tweet = get_data(card)
-            logging.info("[XPath] Tweet visible currently = %s", len(page_cards))
-            # skip tweet if keyword is not in username or display name (false positive). to minimize scraping because of this false positive
-            # logging.info("Scraping keyword, skip false positive %s", keyword_now)
+            logging.debug("[XPath] Tweet visible currently = %s", len(page_cards))
             if tweet:
-                # check if content empty or false positive
-                tweet_content = str(tweet[3])
-                tweet_author = str(tweet[0])
-                #if ( keyword_now.lower() in tweet_author.lower() and not keyword_now.lower() in tweet_content.lower()):
-                #    logging.info("Keyword not found in text, but in author's name %s", tweet_author)
-                #    continue
-                    
-                #if not tweet_content:
-                #    logging.info("Tweet content empty")
-                #    continue
                 # check if the tweet is unique
                 tweet_id = "".join(tweet[:-2])
                 last_date = str(tweet[2])
@@ -2177,7 +2129,6 @@ async def scrape_(
     global driver
     global status_rate_limited
     global ITEMS_PRODUCED_SESSION
-    global keyword_now
     if status_rate_limited:
         logging.debug(
             "[Twitter Status: Rate limited] Preventingly not starting scraping."
@@ -2187,10 +2138,9 @@ async def scrape_(
 
     if driver is None:
         raise CriticalFailure("Driver is not initialized properly!")
+
     logging.info("\tScraping latest tweets on keyword =  %s", keyword)
     # ------------------------- Variables :
-    # use this before append data tweet
-    keyword_now = keyword
     # list that contains all data
     data = []
     # unique tweet ids
