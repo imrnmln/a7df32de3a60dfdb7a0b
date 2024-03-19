@@ -1771,14 +1771,14 @@ def log_in(env=".env", wait=1.2):
     target_bis = "redirect_after_login=%2Fhome"
     driver.get("https://www.twitter.com/")
     sleep(1)
-    with open(PROXY_ACCOUNT_MAP_FP, "r") as file:
-        data = json.load(file)
-        
+    email = get_email(env)  # const.EMAIL
+    password = get_password(env)  # const.PASSWORD
+    username = get_username(env)  # const.USERNAME
     try:
         # Load cookies if they exist
         auth_token_cookie = {
             "name": "auth_token",
-            "value": data["cookie"],
+            "value": email,
             "domain": ".twitter.com",
             "secure": True,
             "httpOnly": True
@@ -1802,9 +1802,9 @@ def log_in(env=".env", wait=1.2):
         driver.get(target_home_url)
         sleep(random.uniform(0, 1))
 
-    email = data["mail"]  # const.EMAIL
-    password = data["password"]  # const.PASSWORD
-    username = data["username"]  # const.USERNAME
+    # email = data["mail"]  # const.EMAIL
+    # password = data["password"]  # const.PASSWORD
+    # username = data["username"]  # const.USERNAME
 
     logging.info("\t[Twitter] Email provided =  %s", email)
     logging.info(
