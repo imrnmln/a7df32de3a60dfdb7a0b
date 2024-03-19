@@ -1623,35 +1623,10 @@ def init_driver(
     options.add_argument(f"user-agent={selected_user_agent}")
     logging.info("\tselected_user_agent :  %s", selected_user_agent)
 
-    selected_proxy_account = select_proxy_and_account_if_any()
-    if selected_proxy_account is not None:
-            
-        if headless is True:
-            headless_mode = "--headless=new"
-            options.add_argument(headless_mode)
-            logging.info(f"\theadless mode used : {headless_mode}")
-
-        MULTI_ACCOUNT_MODE = True
-        _EMAIL = selected_proxy_account["email"]
-        _USERNAME = selected_proxy_account["username"]
-        _PASSWORD = selected_proxy_account["password"]
-        _PROXY = selected_proxy_account["proxy"]
-        PROXY_USERNAME = selected_proxy_account["proxy_username"]
-        PROXY_PASSWORD = selected_proxy_account["proxy_password"]
-        PROXY_PORT = selected_proxy_account["proxy_port"]
-        _COOKIE_FP = selected_proxy_account["cookies_file"]
-        if _COOKIE_FP is None or _COOKIE_FP == "":
-            _COOKIE_FP = f"{_USERNAME}.pkl"
-
-        logging.info(f"[Twitter] [MULTI ACCOUNTS] Selected Proxy: {_PROXY}")
-        logging.info(
-            f"[Twitter] [MULTI ACCOUNTS] Selected Account: {selected_proxy_account['email'], {selected_proxy_account['username']}, {print_first_and_last(selected_proxy_account['password'])}}"
-        )
-    else:        
-        if headless is True:
-            headless_mode = "--headless"
-            options.add_argument(headless_mode)
-            logging.info(f"\theadless mode used : {headless_mode}")
+    if headless is True:
+        headless_mode = "--headless"
+        options.add_argument(headless_mode)
+        logging.info(f"\theadless mode used : {headless_mode}")      
 
     options.add_argument("log-level=3")
     if show_images == False and firefox == False:
@@ -1796,39 +1771,19 @@ def log_in(env=".env", wait=1.2):
     target_bis = "redirect_after_login=%2Fhome"
     driver.get("https://www.twitter.com/")
     sleep(1)
+    with open(PROXY_ACCOUNT_MAP_FP, "r") as file:
+        data = json.load(file)
+        
     try:
         # Load cookies if they exist
-        try:
-            file_to_use = "cookies.pkl"
-            if _COOKIE_FP is not None and len(_COOKIE_FP) > 0:
-                file_to_use = _COOKIE_FP
-            logging.info(f"[Cookies] Loading file: {file_to_use}")
-
-            cookies = pickle.load(open(file_to_use, "rb"))
-        except:
-            cookies = []
-            logging.info("[Cookies] File not found, no cookies.")
-
-        logging.info("[Twitter Chrome] loading existing cookies... ")
-        for cookie in cookies:
-            logging.info("\t-%s", cookie)
-            # Add each cookie to the browser
-            # Check if the cookie is expired
-            if (
-                "expiry" in cookie
-                and datett.fromtimestamp(cookie["expiry"]) < datett.now()
-            ):
-                logging.info("Cookie expired")
-            else:
-                try:
-                    driver.add_cookie(cookie)
-                    cookies_added += 1
-                except exceptions.InvalidCookieDomainException as e:
-                    logging.info("[Twitter Chrome] Not importable cookie: %s", e)
-                except:
-                    logging.info("[Twitter Chrome] Error for cookie %s", cookie)
-                    cookies_not_imported += 1
-        logging.info("[Twitter Chrome] Imported %s cookies.", cookies_added)
+        auth_token_cookie = {
+            "name": "auth_token",
+            "value": data["cookie"],
+            "domain": ".twitter.com",
+            "secure": True,
+            "httpOnly": True
+        }
+        driver.add_cookie(auth_token_cookie)
     except Exception as e:
         logging.exception("An error occured retrieving cookies: %s", e)
 
@@ -1847,9 +1802,9 @@ def log_in(env=".env", wait=1.2):
         driver.get(target_home_url)
         sleep(random.uniform(0, 1))
 
-    email = get_email(env)  # const.EMAIL
-    password = get_password(env)  # const.PASSWORD
-    username = get_username(env)  # const.USERNAME
+    email = data["mail"]  # const.EMAIL
+    password = data["password"]  # const.PASSWORD
+    username = data["username"]  # const.USERNAME
 
     logging.info("\t[Twitter] Email provided =  %s", email)
     logging.info(
