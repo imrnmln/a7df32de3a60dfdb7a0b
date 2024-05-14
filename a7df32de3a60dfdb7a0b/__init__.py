@@ -1974,12 +1974,10 @@ def keep_scroling(
                 )
         for card in page_cards:
             tweet = get_data(card)
-            logging.info("Data tweet before: ", tweet)
             logging.info("[XPath] Tweet visible currently = %s", len(page_cards))
             if tweet:
                 # check if the tweet is unique
-                logging.info("Data tweet before check: ", tweet[:-2])
-                tweet_id = "".join(tweet[:-2])
+                tweet_id = .join(str(item) for item in tweet[:-2])
                 last_date = str(tweet[2])
                 if tweet_id not in tweet_ids:
                     if is_within_timeframe_seconds(last_date, MAX_EXPIRATION_SECONDS):
