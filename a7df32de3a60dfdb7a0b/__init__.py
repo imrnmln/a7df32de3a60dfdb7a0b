@@ -1696,7 +1696,7 @@ def log_search_page(
         proximity = ""
 
     path = (
-        "https://twitter.com/search?q="
+        "https://x.com/search?q="
         + word
         + hash_tags
         + since
@@ -1766,10 +1766,10 @@ def log_in(env=".env", wait=1.2):
     global driver
 
     cookies_added = 0
-    target_home_url = "https://twitter.com/home"
-    target_home = "twitter.com/home"
+    target_home_url = "https://x.com/home"
+    target_home = "x.com/home"
     target_bis = "redirect_after_login=%2Fhome"
-    driver.get("https://www.twitter.com/")
+    driver.get("https://www.x.com/")
     sleep(1)
     email = get_email(env)  # const.EMAIL
     password = get_password(env)  # const.PASSWORD
@@ -1779,7 +1779,7 @@ def log_in(env=".env", wait=1.2):
         auth_token_cookie = {
             "name": "auth_token",
             "value": email,
-            "domain": ".twitter.com",
+            "domain": ".x.com",
             "secure": True,
             "httpOnly": True
         }
@@ -1822,7 +1822,7 @@ def log_in(env=".env", wait=1.2):
         logging.info("[Twitter] Not on target, let's log in...")
         clear_cookies()
 
-        driver.get("https://twitter.com/i/flow/login")
+        driver.get("https://x.com/i/flow/login")
 
         email_xpath = '//input[@autocomplete="username"]'
         password_xpath = '//input[@autocomplete="current-password"]'
@@ -2062,7 +2062,7 @@ def extract_tweet_info(tweet_tuple):
     author = tweet_tuple[0]
     created_at = tweet_tuple[2]
     title = tweet_tuple[0]
-    domain = "twitter.com"
+    domain = "x.com"
     url = tweet_tuple[-1]
     external_id = url.split("/")[
         -1
@@ -2214,7 +2214,7 @@ async def scrape_(
             # 'xx\n@xxxx\n·\nJun 16', '#Criptomoedas #Bitcoin\nNesta quinta-feira, 15,
             # a BlackRock solicitou a autorização para ofertar um fundo negociado em bolsa (ETF) de bitcoin nos Estados Unidos.\nSe aprovado, o
             # ETF será o primeiro dos Estados Unidos de bitcoin à vista.', '', '1', '', '1',
-            # ['https://pbs.twimg.com/card_img/12.21654/zd45zz5?format=jpg&name=small'], 'https://twitter.com/xxxxx/status/1231456479')
+            # ['https://pbs.twimg.com/card_img/12.21654/zd45zz5?format=jpg&name=small'], 'https://x.com/xxxxx/status/1231456479')
             # Create a new sha1 hash
             (
                 content_,
