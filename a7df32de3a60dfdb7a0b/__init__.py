@@ -2019,6 +2019,7 @@ def keep_scroling(
             # driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
             curr_position = driver.execute_script("return window.pageYOffset;")
             try:
+                logging.info("Hide media....")
                 WebDriverWait(driver, 5).until(
                     EC.presence_of_all_elements_located((By.XPATH, "//article[@data-testid='tweet']//div[@data-testid='tweetText']"))
                 )
@@ -2180,6 +2181,7 @@ async def scrape_(
         refresh += 1
         # logging.info("Start execute_script....")
         try:
+            logging.info("Hide media....")
             WebDriverWait(driver, 5).until(
                 EC.presence_of_all_elements_located((By.XPATH, "//article[@data-testid='tweet']//div[@data-testid='tweetText']"))
             )
