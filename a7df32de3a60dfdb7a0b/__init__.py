@@ -1932,6 +1932,12 @@ def keep_scroling(
     while scrolling and tweet_parsed < limit:
         sleep(random.uniform(0.5, 1.5))
         # get the card of tweets
+        driver.execute_script("""
+            document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
+                tweet.style.height = '80px';
+            });
+        """)
+        sleep(2)
         page_cards = driver.find_elements(
             by=By.XPATH, value='//article[@data-testid="tweet"]'
         )  # changed div by article
