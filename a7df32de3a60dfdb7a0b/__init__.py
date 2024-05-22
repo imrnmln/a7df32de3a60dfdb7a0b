@@ -1933,10 +1933,16 @@ def keep_scroling(
         sleep(random.uniform(0.5, 1.5))
         # get the card of tweets
         driver.execute_script("""
+            let tweetTexts = document.querySelectorAll('article div[lang]');
+            tweetTexts.forEach(el => {
+                el.style.fontSize = '8px';
+                el.style.lineHeight = '10px'
+            });
             document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
                 tweet.style.height = '80px';
             });
         """)
+        
         sleep(2)
         page_cards = driver.find_elements(
             by=By.XPATH, value='//article[@data-testid="tweet"]'
