@@ -1932,16 +1932,16 @@ def keep_scroling(
     while scrolling and tweet_parsed < limit:
         sleep(random.uniform(0.5, 1.5))
         # get the card of tweets
-        # driver.execute_script("""
-        #     let tweetTexts = document.querySelectorAll('article div[lang]');
-        #     tweetTexts.forEach(el => {
-        #         el.style.fontSize = '8px';
-        #         el.style.lineHeight = '10px'
-        #     });
-        #     document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
-        #         tweet.style.height = '80px';
-        #     });
-        # """)
+        driver.execute_script("""
+            let tweetTexts = document.querySelectorAll('article div[lang]');
+            tweetTexts.forEach(el => {
+                el.style.fontSize = '8px';
+                el.style.lineHeight = '10px'
+            });
+            document.querySelectorAll("[data-testid='tweet']").forEach(tweet => {
+                tweet.style.height = '80px';
+            });
+        """)
         
         sleep(2)
         page_cards = driver.find_elements(
@@ -2189,6 +2189,7 @@ async def scrape_(
         sleep(1)
         if "rate limited" in driver.page_source.lower():
             logging.info("Rate limited. Waiting before retrying...")
+            sleep(300)
             
         tweet_parsed = 0
         sleep(random.uniform(0.5, 1.5))
