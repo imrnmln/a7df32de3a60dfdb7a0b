@@ -2186,6 +2186,9 @@ async def scrape_(
         scrolling = True
         # logging.info("looking for tweets between " + str(since) + " and " + str(until_local) + " ...")
         logging.info("\tURL being parsed :  %s", str(path))
+        if "rate limited" in driver.page_source.lower():
+            logging.info("Rate limited. Waiting before retrying...")
+            
         tweet_parsed = 0
         sleep(random.uniform(0.5, 1.5))
         # logging.info("Start scrolling & get tweets....")
