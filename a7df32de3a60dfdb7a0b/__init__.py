@@ -2018,15 +2018,15 @@ def keep_scroling(
             driver.execute_script(f"window.scrollTo(0, {random_scroll_position});")
             # driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
             curr_position = driver.execute_script("return window.pageYOffset;")
-            try:
-                logging.info("Hide media....")
-                WebDriverWait(driver, 5).until(
-                    EC.presence_of_all_elements_located((By.XPATH, "//article[@data-testid='tweet']//div[@data-testid='tweetText']"))
-                )
-                driver.execute_script("""let mediaCards = document.querySelectorAll('[data-testid="card.layoutLarge.media"], [data-testid="tweetPhoto"]');mediaCards.forEach(card => {let prevDiv1 = card.parentElement;if (prevDiv1) prevDiv1.parentElement.style.display = 'none';});""")
-                driver.execute_script("""let repEWl = document.querySelectorAll('[data-testid="reply"]');repEWl.forEach(el => {let prevDiv1 = el.parentElement;if (prevDiv1) prevDiv1.parentElement.style.marginTop = '0';;});""")
-            except:
-                logging.info("Cant execute script....")
+            # try:
+            #     logging.info("Hide media....")
+            #     WebDriverWait(driver, 5).until(
+            #         EC.presence_of_all_elements_located((By.XPATH, "//article[@data-testid='tweet']//div[@data-testid='tweetText']"))
+            #     )
+            #     driver.execute_script("""let mediaCards = document.querySelectorAll('[data-testid="card.layoutLarge.media"], [data-testid="tweetPhoto"]');mediaCards.forEach(card => {let prevDiv1 = card.parentElement;if (prevDiv1) prevDiv1.parentElement.style.display = 'none';});""")
+            #     driver.execute_script("""let repEWl = document.querySelectorAll('[data-testid="reply"]');repEWl.forEach(el => {let prevDiv1 = el.parentElement;if (prevDiv1) prevDiv1.parentElement.style.marginTop = '0';;});""")
+            # except:
+            #     logging.info("Cant execute script....")
                 
             if last_position == curr_position:
                 scroll_attempt += 1
@@ -2180,15 +2180,15 @@ async def scrape_(
         )
         refresh += 1
         # logging.info("Start execute_script....")
-        try:
-            logging.info("Hide media....")
-            WebDriverWait(driver, 5).until(
-                EC.presence_of_all_elements_located((By.XPATH, "//article[@data-testid='tweet']//div[@data-testid='tweetText']"))
-            )
-            driver.execute_script("""let mediaCards = document.querySelectorAll('[data-testid="card.layoutLarge.media"], [data-testid="tweetPhoto"]');mediaCards.forEach(card => {let prevDiv1 = card.parentElement;if (prevDiv1) prevDiv1.parentElement.style.display = 'none';});""")
-            driver.execute_script("""let repEWl = document.querySelectorAll('[data-testid="reply"]');repEWl.forEach(el => {let prevDiv1 = el.parentElement;if (prevDiv1) prevDiv1.parentElement.style.marginTop = '0';;});""")
-        except:
-            logging.info("Cant execute script....")
+        # try:
+        #     logging.info("Hide media....")
+        #     WebDriverWait(driver, 5).until(
+        #         EC.presence_of_all_elements_located((By.XPATH, "//article[@data-testid='tweet']//div[@data-testid='tweetText']"))
+        #     )
+        #     driver.execute_script("""let mediaCards = document.querySelectorAll('[data-testid="card.layoutLarge.media"], [data-testid="tweetPhoto"]');mediaCards.forEach(card => {let prevDiv1 = card.parentElement;if (prevDiv1) prevDiv1.parentElement.style.display = 'none';});""")
+        #     driver.execute_script("""let repEWl = document.querySelectorAll('[data-testid="reply"]');repEWl.forEach(el => {let prevDiv1 = el.parentElement;if (prevDiv1) prevDiv1.parentElement.style.marginTop = '0';;});""")
+        # except:
+        #     logging.info("Cant execute script....")
             
         last_position = driver.execute_script("return window.pageYOffset;")
         scrolling = True
