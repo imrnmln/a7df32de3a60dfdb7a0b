@@ -1918,6 +1918,7 @@ def keep_scroling(
     scroll,
     last_position,
     save_images=False,
+    keyword
 ):
     """ scrolling function for tweets crawling"""
     global driver, MAX_EXPIRATION_SECONDS, RATE_LIMITED
@@ -1973,6 +1974,22 @@ def keep_scroling(
                     "[XPath] Rate limitation - can't find any error popup - %s", e
                 )
         for card in page_cards:
+            getUsername = card.find_element(by=By.XPATH, value=".//span").text
+            try:
+                getContent = card.find_element(
+                    by=By.XPATH, value='.//div[@data-testid="tweetText"]'
+                ).text
+            except:
+                getContent = ""
+            if (
+                keyword.lower() in getUsername.lower()
+                and not keyword.lower() in getContent.lower()
+            ) or not getContent.strip():
+                logging.info(
+                    "Keyword not found in text, but in author's name, skipping this false positive or empty content."
+                )
+                continue
+            
             tweet = get_data(card)
             logging.info("[XPath] Tweet visible currently = %s", len(page_cards))
             if tweet:
@@ -2206,7 +2223,7 @@ async def scrape_(
             last_position,
             rate_limited,
         ) = keep_scroling(
-            data, tweet_ids, scrolling, tweet_parsed, limit, scroll, last_position
+            data, tweet_ids, scrolling, tweet_parsed, limit, scroll, last_position, keyword
         )
         if rate_limited:
             logging.info("[Twitter Status: Rate limited] Stopping scraping.")
