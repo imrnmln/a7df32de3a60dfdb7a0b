@@ -49,7 +49,7 @@ global MULTI_ACCOUNT_MODE
 global status_rate_limited
 global MAX_EXPIRATION_SECONDS
 global RATE_LIMITED
-global _EMAIL, _USERNAME, _PASSWORD, _COOKIE_FP, _PROXY
+global _EMAIL, _USERNAME, _PASSWORD, _COOKIE_FP, _PROXY, gl_keyword
 global ITEMS_PRODUCED_SESSION
 ITEMS_PRODUCED_SESSION = 0
 RATE_LIMITED = False
@@ -1917,11 +1917,11 @@ def keep_scroling(
     limit,
     scroll,
     last_position,
-    save_images=False,
-    keyword
+    save_images=False
 ):
     """ scrolling function for tweets crawling"""
     global driver, MAX_EXPIRATION_SECONDS, RATE_LIMITED
+    global gl_keyword
 
     save_images_dir = "/images"
     if save_images == True:
@@ -1982,8 +1982,8 @@ def keep_scroling(
             except:
                 getContent = ""
             if (
-                keyword.lower() in getUsername.lower()
-                and not keyword.lower() in getContent.lower()
+                gl_keyword.lower() in getUsername.lower()
+                and not gl_keyword.lower() in getContent.lower()
             ) or not getContent.strip():
                 logging.info(
                     "Keyword not found in text, but in author's name, skipping this false positive or empty content."
@@ -2128,6 +2128,7 @@ async def scrape_(
     global driver
     global status_rate_limited
     global ITEMS_PRODUCED_SESSION
+    global gl_keyword
     if status_rate_limited:
         logging.debug(
             "[Twitter Status: Rate limited] Preventingly not starting scraping."
@@ -2139,6 +2140,7 @@ async def scrape_(
         raise CriticalFailure("Driver is not initialized properly!")
 
     logging.info("\tScraping latest tweets on keyword =  %s", keyword)
+    gl_keyword = keyword
     # ------------------------- Variables :
     # list that contains all data
     data = []
