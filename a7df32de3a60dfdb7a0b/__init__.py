@@ -1975,6 +1975,9 @@ def keep_scroling(
                 )
         for card in page_cards:
             getUsername = card.find_element(by=By.XPATH, value=".//span").text
+            getPostdate = card.find_element(by=By.XPATH, value=".//time").get_attribute(
+                "datetime"
+            )
             try:
                 getContent = card.find_element(
                     by=By.XPATH, value='.//div[@data-testid="tweetText"]'
@@ -1984,7 +1987,7 @@ def keep_scroling(
             if (
                 gl_keyword.lower() in getUsername.lower()
                 and not gl_keyword.lower() in getContent.lower()
-            ) or not getContent.strip():
+            ) or not getContent.strip() or not is_within_timeframe_seconds(str(getPostdate), MAX_EXPIRATION_SECONDS):
                 logging.info(
                     "Keyword not found in text, but in author's name, skipping this false positive or empty content."
                 )
