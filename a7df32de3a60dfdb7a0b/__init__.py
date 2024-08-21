@@ -1989,7 +1989,7 @@ def keep_scroling(
                 and not gl_keyword.lower() in getContent.lower()
             ) or not getContent.strip() or not is_within_timeframe_seconds(str(getPostdate), MAX_EXPIRATION_SECONDS):
                 logging.info(
-                    "Keyword not found in text, but in author's name, skipping this false positive or empty content."
+                    "Keyword not found in text, but in author's name, skipping this false positive or empty content or old tweet"
                 )
                 continue
             
