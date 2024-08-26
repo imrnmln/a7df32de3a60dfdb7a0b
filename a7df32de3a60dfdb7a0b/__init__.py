@@ -1,32 +1,18 @@
-import os
-import re
-import hashlib
 import random
-import datetime
-from datetime import datetime as datett
-from datetime import timedelta, date, timezone
-from time import sleep
-import pytz
-import pandas as pd
+import aiohttp
 import dotenv
-import json
-import logging
+import os
+import asyncio
+from lxml import html
+from typing import AsyncGenerator, List
 import time
-from pathlib import Path
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options as ChromeOptions
-from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common import exceptions
-from typing import AsyncGenerator
-import pickle
-import zipfile
+from datetime import time as tttime, datetime as datett
+from datetime import timezone
+import pytz
+import hashlib
+import logging
+from lxml.html import fromstring
+import re
 from exorde_data import (
     Item,
     Content,
@@ -35,2272 +21,763 @@ from exorde_data import (
     Title,
     Url,
     Domain,
-    ExternalId,
-    ExternalParentId,
 )
-import subprocess
-import shutil
-import signal
 
-# import geckodriver_autoinstaller
+import hashlib
+from wordsegment import load, segment
+load()
 
-global driver
-global MULTI_ACCOUNT_MODE
-global status_rate_limited
-global MAX_EXPIRATION_SECONDS
-global RATE_LIMITED
-global _EMAIL, _USERNAME, _PASSWORD, _COOKIE_FP, _PROXY, gl_keyword
-global ITEMS_PRODUCED_SESSION
-ITEMS_PRODUCED_SESSION = 0
-RATE_LIMITED = False
-MULTI_ACCOUNT_MODE = False
-PROXY_ACCOUNT_MAP_FP = "proxy_account_list.json"
-MAX_EXPIRATION_SECONDS = 1800
-DEFAULT_ROTATION_DURATION = 3600
-special_mode = True
-NB_SPECIAL_CHECKS = 6
-status_rate_limited = False
-# Global variable declaration
-_PROXY = None
-_EMAIL = None
-_USERNAME = None
-_PASSWORD = None
-_COOKIE_FP = None
-driver = None
-
-##### SPECIAL MODE
-# TOP 222
-SPECIAL_KEYWORDS_LIST = [    
-    "the",
-    "the",
-    "lord",
-    "ords",
-    "brc20",
-    "paris2024",
-    "paris2024",
-    "olympic",
-    "olympic",
-    "Acura",
-    "Alfa Romeo",
-    "Aston Martin",
-    "Audi",
-    "Bentley",
-    "BMW",
-    "Buick",
-    "Cadillac",
-    "Chevrolet",
-    "Chrysler",
-    "Dodge",
-    "Ferrari",
-    "Fiat",
-    "Ford",
-    "Genesis",
-    "GMC",
-    "Honda",
-    "Hyundai",
-    "Infiniti",
-    "Jaguar",
-    "Jeep",
-    "Kia",
-    "Lamborghini",
-    "Land Rover",
-    "Lexus",
-    "Lincoln",
-    "Lotus",
-    "Maserati",
-    "Mazda",
-    "Taiko",
-    "Taiko labs",
-    "McLaren",
-    "Mercedes-Benz",
-    "MINI",
-    "Mitsubishi",
-    "Nissan",
-    "Porsche",
-    "Ram",
-    "Renault",
-    "Rolls-Royce",
-    "Subaru",
-    "Tesla",
-    "Toyota",
-    "Volkswagen",
-    "Volvo",    
-    "BlackRock",
-    "Vanguard",
-    "State Street",
-    "advisors",
-    "Fidelity",
-    "Fidelity Investments",
-    "Asset Management",
-    "Asset",
-    "digital asset",
-    "NASDAQ Composite",
-    "Dow Jones Industrial Average",
-    "Gold",
-    "Silver",
-    "Brent Crude",
-    "WTI Crude",
-    "EUR",
-    "US",
-    "YEN"
-    "UBS",
-    "PIMCO",
-    "schroders",
-    "aberdeen",    
-    "louis vuitton",
-    "moet Chandon",
-    "hennessy",
-    "dior",
-    "fendi",
-    "givenchy",
-    "celine",
-    "tag heuer",
-    "bvlgari",
-    "dom perignon",
-    "hublot",
-    "Zenith",    
-    "meme", 
-    "coin", 
-    "memecoin", 
-    "pepe", 
-    "doge", 
-    "shib",
-    "floki",
-    "dogtoken",
-    "trump token",
-    "barron token",    
-    "DOGE",
-    "SHIB",
-    "PEPE",
-    "BONK",
-    "WIF",
-    "FLOKI",
-    "MEME",    
-    "DOGE",
-    "SHIB",
-    "PEPE",
-    "BONK",
-    "WIF",
-    "FLOKI",
-    "MEME",
-    "DOGE",
-    "SHIB",
-    "PEPE",
-    "BONK",
-    "WIF",
-    "FLOKI",
-    "MEME",
-    "TRUMP",
-    "BabyDoge",
-    "ERC20",
-    "BONE",
-    "COQ",
-    "WEN",
-    "BITCOIN",
-    "ELON",
-    "SNEK",
-    "MYRO",
-    "PORK",
-    "TOSHI",
-    "SMOG",
-    "LADYS",
-    "AIDOGE",
-    "TURBO",
-    "TOKEN",
-    "SAMO",
-    "KISHU",
-    "TSUKA",
-    "LEASH",
-    "QUACK",
-    "VOLT",
-    "PEPE2.0",
-    "JESUS",
-    "MONA",
-    "DC",
-    "WSM",
-    "PIT",
-    "QOM",
-    "PONKE",
-    "SMURFCAT",
-    "AKITA",
-    "VINU",
-    "ANALOS",
-    "BAD",
-    "CUMMIES",
-    "HONK",
-    "HOGE",
-    "$MONG",
-    "SHI",
-    "BAN",
-    "RAIN",
-    "TAMA",
-    "PAW",
-    "SPX",
-    "HOSKY",
-    "BOZO",
-    "DOBO",
-    "PIKA",
-    "CCC",
-    "REKT",
-    "WOOF",
-    "MINU",
-    "WOW",
-    "PUSSY",
-    "KEKE",
-    "DOGGY",
-    "KINGSHIB",
-    "CHEEMS",
-    "SMI",
-    "OGGY",
-    "DINGO",
-    "DONS",
-    "GRLC",
-    "AIBB",
-    "CATMAN",
-    "XRP",
-    "CAT",
-    "数字資産",  # Digital Asset (Japanese)
-    "仮想",  # Virtual (Japanese)
-    "仮想通貨",  # Virtual Currency (Japanese)
-    "自動化",  # Automation (Japanese)
-    "アルゴリズム",  # Algorithm (Japanese)
-    "コード",  # Code (Japanese)
-    "機械学習",  # Machine Learning (Japanese)
-    "ブロックチェーン",  # Blockchain (Japanese)
-    "サイバーセキュリティ",  # Cybersecurity (Japanese)
-    "人工",  # Artificial (Japanese)
-    "合成",  # Synthetic (Japanese)
-    "主要",  # Major (Japanese)
-    "IoT",
-    "クラウド",  # Cloud (Japanese)
-    "ソフトウェア",  # Software (Japanese)
-    "API",
-    "暗号化",  # Encryption (Japanese)
-    "量子",  # Quantum (Japanese)
-    "ニューラルネットワーク",  # Neural Network (Japanese)
-    "オープンソース",  # Open Source (Japanese)
-    "ロボティクス",  # Robotics (Japanese)
-    "デブオプス",  # DevOps (Japanese)
-    "5G",
-    "仮想現実",  # Virtual Reality (Japanese)
-    "拡張現実",  # Augmented Reality (Japanese)
-    "バイオインフォマティクス",  # Bioinformatics (Japanese)
-    "ビッグデータ",  # Big Data (Japanese)
-    "大統領",  # President (Japanese)
-    "行政",  # Administration (Japanese)
-    "Binance",
-    "Bitcoin ETF",
-    "政治",  # Politics (Japanese)
-    "政治的",  # Political (Japanese)
-    "ダイアグラム",  # Diagram (Japanese)
-    "$algo",
-    "$algo",
-    "%23CAC",
-    "%23G20",
-    "%23IPO",
-    "%23NASDAQ",
-    "%23NYSE",
-    "%23OilPrice",
-    "%23SP500",
-    "%23USD",
-    "%23airdrop",
-    "%23altcoin",
-    "%23bonds",
-    "%23price",
-    "AI",
-    "AI",
-    "AI",
-    "AI",
-    "AUDNZD",
-    "Alphabet%20(GOOG)",
-    "Apple",
-    "Aprendizaje Automático",
-    "BNB",
-    "Berkshire",
-    "Biden administration",
-    "Binance",
-    "Bitcoin%20ETF",
-    "Black%20Rock",
-    "BlackRock",
-    "BlackRock",
-    "Branche",
-    "Brazil",
-    "CAC40",
-    "COIN",
-    "Canada",
-    "China",
-    "Coinbase",
-    "Congress",
-    "Crypto",
-    "Crypto",
-    "Crypto",
-    "Cryptocurrencies",
-    "Cryptos",
-    "DeFi",
-    "Diagramm",
-    "Dios mío",
-    "DowJones",
-    "ETF",
-    "ETFs",
-    "EU",
-    "EU",
-    "EURUSD",
-    "Elon",
-    "Elon",
-    "Elon",
-    "Elon%20musk",
-    "Europe",
-    "European%20union%20(EU)",
-    "FB%20stock",
-    "FTSE",
-    "Firma",
-    "France",
-    "GDP",
-    "GPU",
-    "GameFi",
-    "Gensler",
-    "Germany",
-    "Gerücht",
-    "Geschäft",
-    "Gesundheit",
-    "Gewinn",
-    "Gewinn",
-    "Heilung",
-    "IA",
-    "IA",
-    "IPO",
-    "Israel",
-    "Israel",
-    "Israel",
-    "Juego",
-    "KI",
-    "Konflikt",
-    "Kraken",
-    "LGBTQ rights",
-    "LVMH",
-    "Land",
-    "Luxus",
-    "Marke",
-    "Maschinelles Lernen",
-    "Mexico",
-    "NFLX",
-    "NFT",
-    "NFT",
-    "NFTs",
-    "NYSE",
-    "Nachrichten",
-    "Nasdaq%20100",
-    "Oh Dios mío",
-    "Openfabric",
-    "Openfabric AI",
-    "Openfabric",
-    "OFN",
-    "PLTR",
-    "Palestine",
-    "Palestine",
-    "Palestine",
-    "País",
-    "Politik",
-    "Produkt",
-    "Roe v. Wade",
-    "Silicon Valley",
-    "Spiel",
-    "Spot%20ETF",
-    "Start-up",
-    "Streaming",
-    "Supreme Court",
-    "Technologie",
-    "Tesla",
-    "UE",
-    "UE",
-    "USA",
-    "USDEUR",
-    "United%20states",
-    "Unterhaltung",
-    "Verlust",
-    "Virus",
-    "Vorhersage",
-    "WallStreet",
-    "WarrenBuffett",
-    "Warren Buffett",
-    "Web3",
-    "X.com",
-    "XAUUSD",
-    "Xitter",
-    "abortion",
-    "achetez",
-    "actualité",
-    "airdrop",
-    "airdrops",
-    "alert",
-    "algorand",
-    "algorand",
-    "algorand",
-    "amazon",
-    "analytics",
-    "announcement",
-    "apprentissage",
-    "artificial intelligence",
-    "artificial intelligence",
-    "asset",
-    "asset%20management",
-    "attack",
-    "attack",
-    "attack",
-    "attentat",
-    "authocraty",
-    "balance sheet",
-    "bank",
-    "bear",
-    "bearish",
-    "bears",
-    "beliebt",
-    "bezos",
-    "biden",
-    "biden",
-    "biden",
-    "biden",
-    "data",
-    "develop",
-    "virtual",
-    "automation",
-    "algorithm",
-    "code",
-    "machine learning",
-    "blockchain",
-    "cybersecurity",
-    "artificial",
-    "synth",
-    "synthetic",
-    "major",
-    "IoT",
-    "cloud",
-    "software",
-    "API",
-    "encryption",
-    "quantum",
-    "neural",
-    "open source",
-    "robotics",
-    "devop",
-    "5G",
-    "virtual reality",
-    "augmented reality",
-    "bioinformatics",
-    "big data",
-    "billion",
-    "bitcoin",
-    "bizness",
-    "blockchain",
-    "bond",
-    "breaking news",
-    "breaking%20news",
-    "btc",
-    "btc",
-    "btc",
-    "btc",
-    "btc",
-    "btc",
-    "btc",
-    "btc",
-    "budget",
-    "bull",
-    "bullish",
-    "bulls",
-    "business",
-    "businesses",
-    "buy support",
-    "cardano",
-    "cash flow",
-    "cbdc",
-    "choquant",
-    "climate change action",
-    "climate change",
-    "climate tech startups",
-    "communist",
-    "companies",
-    "company",
-    "compound interest",
-    "compra ahora"
-    "compra",
-    "conflict",
-    "conflict",
-    "conflicto",
-    "conflit",
-    "congress",
-    "conservatives",
-    "corporate",
-    "corporation",
-    "credit",
-    "crime",
-    "crisis",
-    "crude%20oil",
-    "crypto",
-    "crypto",
-    "crypto",
-    "crypto",
-    "crypto",
-    "cryptocurrency",
-    "cryptocurrency",
-    "cura",
-    "currencies",
-    "currency",
-    "currency",
-    "database",
-    "debit",
-    "debt",
-    "debt",
-    "decentralized finance",
-    "decentralized",
-    "decline",
-    "deep learning",
-    "defi",
-    "democracy",
-    "diffusion",
-    "digital",
-    "divertissement",
-    "dividend",
-    "doge",
-    "dogecoin",
-    "démarrage",
-    "e-commerce",
-    "economy",
-    "economy",
-    "education startups",
-    "education",
-    "elections",
-    "elisee",
-    "embargo",
-    "embassy",
-    "empresa",
-    "entreprise",
-    "entretenimiento",
-    "equity",
-    "erc20",
-    "eth",
-    "eth",
-    "eth",
-    "eth",
-    "eth",
-    "ethereum",
-    "exchange rate",
-    "expense",
-    "extremism",
-    "fair%20launch",
-    "fascist",
-    "finance",
-    "finance",
-    "financial advisor",
-    "financial planning",
-    "financing",
-    "fintech",
-    "fintech",
-    "fintech",
-    "fiscal policy",
-    "fixed income",
-    "foreign aid",
-    "foreign exchange",
-    "foreign policy",
-    "forex",
-    "forex",
-    "founder CEO",
-    "founders",
-    "fusion",
-    "gagner",
-    "gain",
-    "ganancia",
-    "ganar",
-    "gas",
-    "gaza",
-    "gaza",
-    "gaza",
-    "government",
-    "governments",
-    "graphique",
-    "gross domestic product",
-    "growth",
-    "gráfico",
-    "gun control",
-    "gun violence prevention",
-    "hamas",
-    "hamas",
-    "hamas",
-    "hamas",
-    "healthcare startups",
-    "healthcare",
-    "helion",
-    "hft trading",
-    "holdings",
-    "hostage",
-    "hostage",
-    "immigration reform",
-    "immigration",
-    "impactante",
-    "impactante",
-    "impeachment",
-    "income",
-    "increíble",
-    "increíble",
-    "incroyable",
-    "industria",
-    "industrie",
-    "inflation",
-    "inflation",
-    "infrastructure",
-    "insider trading",
-    "insider",
-    "insurance",
-    "intraday",
-    "investing",
-    "investment",
-    "investor",
-    "investors",
-    "jerusalem",
-    "jeu",
-    "kaufen",
-    "kremlin",
-    "legal",
-    "legal%20tender",
-    "liability",
-    "libertarian",
-    "liquidity",
-    "loan",
-    "long",
-    "lujo",
-    "luxe",
-    "machine learning",
-    "macron",
-    "macron",
-    "macron",
-    "en marche",
-    "parti",
-    "marca",
-    "margin",
-    "mark%20zuckerberg",
-    "market capitalization",
-    "market maker",
-    "market",
-    "markets",
-    "marque",
-    "mein Gott",
-    "middle east",
-    "middle east",
-    "middle east",
-    "million",
-    "mint",
-    "missile",
-    "missile",
-    "missile",
-    "mon Dieu",
-    "monero",
-    "money",
-    "mortgage",
-    "moscow",
-    "mutual fund",
-    "nasdaq",
-    "national security",
-    "national%20emergency",
-    "national%20security",
-    "natural%20gas",
-    "negocios",
-    "net income",
-    "net worth",
-    "new project",
-    "new startup",
-    "news",
-    "newsfeed",
-    "newsflash",
-    "nft",
-    "nft%20latform",
-    "nftcommunity",
-    "nfts",
-    "noticias",
-    "nuclear",
-    "official",
-    "oil",
-    "parliament",
-    "pays",
-    "perder",
-    "perdido",
-    "perdre",
-    "perdu",
-    "plummet",
-    "police",
-    "politician",
-    "politicians",
-    "politique",
-    "polkadot",
-    "polygon",
-    "política",
-    "populaire",
-    "popular",
-    "populism",
-    "portfolio",
-    "predicción",
-    "press",
-    "price-to-earnings ratio",
-    "producto",
-    "produit",
-    "profit",
-    "promising company",
-    "protocols",
-    "prédiction",
-    "putin",
-    "putin",
-    "putin",
-    "putin",
-    "poutine",
-    "poutine",
-    "poutine",
-    "poutine",
-    "vladimir putin",
-    "vladimir putin",
-    "vladimir putin",
-    "xi jinping",
-    "xi jinping",
-    "xi jinping",
-    "racial justice",
-    "recession",
-    "renault trucks",
-    "renault trucks",
-    "renault",
-    "renault",
-    "resistance sell",
-    "retirement planning",
-    "return on investment",
-    "riots",
-    "ripple",
-    "risk",
-    "robotics",
-    "rumeur",
-    "rumor",
-    "russia",
-    "s&p500",
-    "sales",
-    "salud",
-    "sam20altman",
-    "santé",
-    "satoshi",
-    "schockierend",
-    "scraping",
-    "securities",
-    "security%20token",
-    "self-driving cars",
-    "senate",
-    "senator",
-    "senators",
-    "shardeum",
-    "short",
-    "silvio micali",
-    "solana",
-    "solana%20sol",
-    "sp500",
-    "space exploration",
-    "space tech startups",
-    "stablecoin",
-    "startup",
-    "startup",
-    "stock market",
-    "stock",
-    "stocks",
-    "streaming",
-    "syria",
-    "takeoff",
-    "tax",
-    "tech startups",
-    "technologie",
-    "technology",
-    "tecnología",
-    "token",
-    "toyota",
-    "trade",
-    "trading",
-    "trading",
-    "traitement",
-    "treasury bill",
-    "trump",
-    "trump",
-    "trump",
-    "trump",
-    "vote",
-    "vote",
-    "vote",
-    "election",
-    "election",
-    "election",
-    "voter",
-    "voter",
-    "million",
-    "club",
-    "tech",
-    "nvda",
-    "machine",
-    "generative",
-    "reinforcement",
-    "official",
-    "twitter",
-    "ukraine",
-    "unglaublich",
-    "unicorns",
-    "unicorns",
-    "us%20president",
-    "usdt",
-    "usdt",
-    "usdt",
-    "usdt",
-    "utility%20token",
-    "venture capital",
-    "venture capital",
-    "venture capital",
-    "verloren",
-    "virus",
-    "virus",
-    "volvo group",
-    "volvo trucks",
-    "volvo",
-    "voting rights",
-    "wall street",
-    "war in Ukraine",
-    "war",
-    "web3",
-    "web3",
-    "white house",
-    "worldcoin",
-    "xrp",
-    "yield",
-    "zero knowledge",
-    "zksync",
-    "ГПУ",
-    "ЕС",
-    "ИИ",
-    "Игра",
-    "Илон",
-    "Машинное обучение",
-    "Страна",
-    "бизнес",
-    "бренд",
-    "вирус",
-    "график",
-    "здоровье",
-    "индустрия",
-    "компания",
-    "конфликт",
-    "купи сейчас",
-    "лечение",
-    "невероятный",
-    "новости",
-    "о боже мой",
-    "победа",
-    "политика",
-    "популярный",
-    "поражение",
-    "потеря",
-    "потоковая передача",
-    "прибыль",
-    "прогноз",
-    "продукт",
-    "развлечение",
-    "роскошь",
-    "слух",
-    "стартап",
-    "технологии",
-    "шокирующий",
-    "أخبار",
-    "أعمال",
-    "إيلون",
-    "اشتر الآن",
-    "الاتحاد الأوروبي",
-    "الذكاء الاصطناعي",
-    "بث مباشر",
-    "بلد",
-    "ترفيه",
-    "تعلم الآلة",
-    "تكنولوجيا",
-    "توقع",
-    "خسارة",
-    "رائع",
-    "ربح",
-    "رسم بياني",
-    "سياسة",
-    "شائعة",
-    "شركة ناشئة",
-    "شركة",
-    "شهير",
-    "صادم",
-    "صحة",
-    "صراع",
-    "صناعة",
-    "ضائع",
-    "علاج",
-    "علامة تجارية",
-    "فخامة",
-    "فوز",
-    "فيروس",
-    "لعبة",
-    "منتج",
-    "وحدة معالجة الرسومات",
-    "يا إلهي",
-    "ああ、神様",
-    "イーロン",
-    "ウイルス",
-    "エンターテインメント",
-    "ゲーム",
-    "スタートアップ",
-    "ストリーミング",
-    "チャート",
-    "テクノロジー",
-    "ニュース",
-    "ビジネス",
-    "ブランド",
-    "业务",
-    "予測",
-    "产品",
-    "人工智能",
-    "人気",
-    "今買う",
-    "令人难以置信",
-    "令人震惊",
-    "会社",
-    "信じられない",
-    "健康",
-    "健康",
-    "公司",
-    "冲突",
-    "初创企业",
-    "利益",
-    "勝利",
-    "品牌",
-    "哦，我的天啊",
-    "噂",
-    "国",
-    "国家",
-    "图表",
-    "埃隆",
-    "失われた",
-    "失去",
-    "娱乐",
-    "技术",
-    "收益",
-    "政治",
-    "政治",
-    "敗北",
-    "新闻",
-    "机器学习",
-    "機械学習",
-    "欧盟",
-    "治疗",
-    "治療",
-    "流媒体",
-    "游戏",
-    "热门",
-    "産業",
-    "病毒",
-    "立刻购买",
-    "紛争",
-    "行业",
-    "衝撃的",
-    "製品",
-    "谣言",
-    "豪华",
-    "赢",
-    "输",
-    "预测",
-    "高級"
-    ]
-############
-
-# default values
-DEFAULT_OLDNESS_SECONDS = 120
-DEFAULT_MAXIMUM_ITEMS = 25
-DEFAULT_MIN_POST_LENGTH = 10
-DEFAULT_DEFAULT_KEYWORD_WEIGHT_PICK = 0.5
-
-
-user_agents = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+USER_AGENT_LIST = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
 ]
-#############################################################################
-#############################################################################
-#############################################################################
-#############################################################################
-#############################################################################
+
+global MAX_EXPIRATION_SECONDS
+global SKIP_POST_PROBABILITY
+MAX_EXPIRATION_SECONDS = 80000
+SKIP_POST_PROBABILITY = 0.1
+BASE_TIMEOUT = 30
+
+subreddits_top_225 = [
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/all",
+    "r/AITAH",
+    "r/AITAH",
+    "r/AITAH",
+    "r/AmItheAsshole",
+    "r/AmItheAsshole",
+    "r/AlgorandOfficial",
+    "r/almosthomeless",
+    "r/altcoin",
+    "r/amcstock",
+    "r/Anarcho_Capitalism",
+    "r/announcements",
+    "r/announcements",
+    "r/announcements",
+    "r/announcements",
+    "r/antiwork",
+    "r/AskReddit",
+    "r/AskReddit",
+    "r/AskReddit",
+    "r/AskReddit",
+    "r/AskReddit",
+    "r/AskReddit",
+    "r/AskReddit",
+    "r/AskReddit",
+    "r/asktrading",
+    "r/Banking",
+    "r/baseball",
+    "r/binance",
+    "r/Bitcoin",
+    "r/Bitcoin",
+    "r/Bitcoin",
+    "r/bitcoin",
+    "r/BitcoinBeginners",
+    "r/Bitcoincash",
+    "r/BitcoinMarkets",
+    "r/books",
+    "r/btc",
+    "r/btc",
+    "r/btc",
+    "r/budget",
+    "r/BullTrader",
+    "r/Buttcoin",
+    "r/cardano",
+    "r/China",
+    "r/CoinBase",
+    "r/CreditCards",
+    "r/Crypto",
+    "r/Crypto_General",
+    "r/Cryptocurrencies",
+    "r/Cryptocurrencies",
+    "r/CryptoCurrency",
+    "r/CryptoCurrency",
+    "r/CryptoCurrency",
+    "r/CryptoCurrency",
+    "r/CryptoCurrency",
+    "r/CryptoCurrency",
+    "r/CryptoCurrency",
+    "r/CryptoCurrencyClassic",
+    "r/CryptocurrencyMemes",
+    "r/CryptoCurrencyTrading",
+    "r/CryptoMarkets",
+    "r/CryptoMoonShots",
+    "r/CryptoMoonShots",
+    "r/CryptoMarkets",
+    "r/CryptoTechnology",
+    "r/Damnthatsinteresting",
+    "r/dataisbeautiful",
+    "r/defi",
+    "r/defi",
+    "r/Dividends",
+    "r/dogecoin",
+    "r/dogecoin",
+    "r/dogecoin",
+    "r/dogecoin",
+    "r/Economics",
+    "r/Economics",
+    "r/Economics",
+    "r/eth",
+    "r/ethereum",
+    "r/ethereum",
+    "r/ethereum",
+    "r/ethereum",
+    "r/ethermining",
+    "r/ethfinance",
+    "r/ethstaker",
+    "r/ethtrader",
+    "r/ethtrader",
+    "r/ethtrader",
+    "r/etoro",
+    "r/etoro",
+    "r/Europe",
+    "r/facepalm",
+    "r/facepalm",
+    "r/facepalm",
+    "r/facepalm",
+    "r/fatFIRE",
+    "r/Finance",
+    "r/Finance",
+    "r/Finance",
+    "r/FinanceNews",
+    "r/FinanceNews",
+    "r/FinanceNews",
+    "r/FinanceStudents",
+    "r/FinancialCareers",
+    "r/financialindependence",
+    "r/FinancialPlanning",
+    "r/financialplanning",
+    "r/forex",
+    "r/formula1",
+    "r/france",
+    "r/Frugal",
+    "r/Futurology",
+    "r/gaming",
+    "r/Germany",
+    "r/GME",
+    "r/ico",
+    "r/investing",
+    "r/investor",
+    "r/jobs",
+    "r/leanfire",
+    "r/ledgerwallet",
+    "r/litecoin",
+    "r/MiddleClassFinance",
+    "r/Monero",
+    "r/Monero",
+    "r/nanocurrency",
+    "r/NFT",
+    "r/NoStupidQuestions",
+    "r/NoStupidQuestions",
+    "r/NoStupidQuestions",
+    "r/NoStupidQuestions",
+    "r/passive_income",
+    "r/pennystocks",
+    "r/personalfinance",
+    "r/PFtools",
+    "r/politics",
+    "r/politics",
+    "r/politics",
+    "r/politics",
+    "r/politics",
+    "r/politics",
+    "r/povertyfinance",
+    "r/povertyfinance",
+    "r/povertyfinance",
+    "r/realestateinvesting",
+    "r/retirement",
+    "r/Ripple",
+    "r/robinhood",
+    "r/robinhood",
+    "r/Showerthoughts",
+    "r/soccer",
+    "r/space",
+    "r/sports",
+    "r/sports",
+    "r/sports",
+    "r/Stellar",
+    "r/stockmarket",
+    "r/stockmarket",
+    "r/Stocks",
+    "r/Stocks",
+    "r/Stocks",
+    "r/StudentLoans",
+    "r/tax",
+    "r/technicalraptor",
+    "r/technology",
+    "r/technology",
+    "r/technology",
+    "r/Tether",
+    "r/todayilearned",
+    "r/todayilearned",
+    "r/todayilearned",
+    "r/todayilearned",
+    "r/trading",
+    "r/trading",
+    "r/trading",
+    "r/tradingreligion",
+    "r/unitedkingdom",
+    "r/unpopularopinion",
+    "r/ValueInvesting",
+    "r/ValueInvesting",
+    "r/ValueInvesting",
+    "r/Wallstreet",
+    "r/WallStreetBets",
+    "r/WallStreetBets",
+    "r/WallStreetBets",
+    "r/WallStreetBetsCrypto",
+    "r/Wallstreetsilver",
+    "r/WhitePeopleTwitter",
+    "r/WhitePeopleTwitter",
+    "r/WhitePeopleTwitter",
+    "r/WhitePeopleTwitter",
+    "r/worldnews",
+    "r/worldnews",
+    "r/worldnews",
+    "r/worldnews",
+    "r/worldnews",
+    ###
+    "r/BaldursGate3",
+    "r/teenagers",
+    "r/BaldursGate3",
+    "r/teenagers",
+    "r/BaldursGate3",
+    "r/teenagers",
+    "r/BaldursGate3",
+    "r/teenagers",
+    "r/BigBrother",
+    "r/BigBrother",
+    "r/BigBrother",
+    "r/wallstreetbets",
+    "r/wallstreetbets",
+    "r/namenerds",
+    "r/Eldenring",
+    "r/Unexpected",
+    "r/NonCredibleDefense",
+    "r/wallstreetbets",
+    "r/news",
+    "r/news",
+    "r/news",
+    "r/mildlyinteresting",  
+    "r/RandomThoughts",
+    "r/ireland",
+    "r/france",
+    "r/ireland",
+    "r/de",
+    "r/ireland",
+    "r/unitedkingdom", "r/AskUK", "r/CasualUK", "r/britishproblems",
+    "r/canada", "r/AskCanada", "r/onguardforthee", "r/CanadaPolitics",
+    "r/australia", "r/AskAnAustralian", "r/straya", "r/sydney",
+    "r/india", "r/AskIndia", "r/bollywood", "r/Cricket", "r/Slovenia", "r/indiadiscussion",
+    "r/germany", "r/de", "r/LearnGerman", "r/germusic",
+    "r/france", "r/French", "r/paris", "r/europe", "r/relacionamentos",
+    "r/japan", "r/japanlife", "r/newsokur", "r/learnjapanese",
+    "r/brasil", "r/brasilivre", "r/riodejaneiro", "r/saopaulo",
+    "r/mexico", "r/MexicoCity", "r/spanish", "r/yo_espanol",
+    # 50 Most Popular News, Politics, and Finance/Economics Subreddits
+    "r/news", "r/worldnews", "r/UpliftingNews", "r/nottheonion", "r/TrueReddit",
+    "r/politics", "r/PoliticalDiscussion", "r/worldpolitics", "r/neutralpolitics", "r/Ask_Politics",
+    "r/personalfinance", "r/investing", "r/StockMarket", "r/financialindependence", "r/economics",
+    "r/TaylorSwift","r/TaylorSwift"
+    # 50 Simply Relevant/Popular Subreddits
+    "r/AskReddit", "r/IAmA", "r/funny", "r/pics", "r/gaming", "r/aww", "r/todayilearned",
+    "r/science", "r/technology", "r/worldnews", "r/Showerthoughts", "r/books", "r/movies",
+    "r/Music", "r/Art", "r/history", "r/EarthPorn", "r/food", "r/travel", "r/fitness", "r/DIY",
+    "r/LifeProTips", "r/explainlikeimfive", "r/dataisbeautiful", "r/futurology", "r/WritingPrompts",
+    "r/nosleep", "r/personalfinance", "r/photography", "r/NatureIsFuckingLit", "r/Advice",
+    "r/askscience", "r/gadgets", "r/funny", "r/pics", "r/gaming", "r/aww", "r/todayilearned",
+    "r/science", "r/technology", "r/worldnews", "r/Showerthoughts", "r/books", "r/movies",
+    "r/Music", "r/Art", "r/history", "r/EarthPorn", "r/food", "r/travel", "r/fitness", "r/DIY",
+    "r/LifeProTips", "r/explainlikeimfive", "r/dataisbeautiful", "r/futurology", "r/WritingPrompts"
+]
 
 
-def delete_org_files_in_tmp():
-    tmp_folder = "/tmp/"
-    target_prefix = ".org"
-
-    try:
-        # Check if the /tmp/ folder exists
-        if not os.path.exists(tmp_folder):
-            logging.info(
-                f"[DISK CLEANUP] Error: The directory '{tmp_folder}' does not exist."
-            )
-            return
-
-        # Iterate through the files in /tmp/ folder
-        for filename in os.listdir(tmp_folder):
-            if filename.startswith(target_prefix):
-                file_path = os.path.join(tmp_folder, filename)
-
-                # Try to remove the file
-                try:
-                    if os.path.isfile(file_path):
-                        os.remove(file_path)
-                        logging.info(f"[DISK CLEANUP] Deleted file: {filename}")
-                    elif os.path.isdir(file_path):
-                        shutil.rmtree(file_path)
-                        logging.info(f"[DISK CLEANUP] Deleted directory: {filename}")
-
-                # Handle permission errors and other exceptions
-                except Exception as e:
-                    logging.exception(f"[DISK CLEANUP] Error deleting {filename}: {e}")
-
-    except Exception as e:
-        logging.exception(f"[DISK CLEANUP] An error occurred: {e}")
-
-
-def delete_core_files():
-    current_folder = "/exorde/"
-    target_prefix = "core."
-    # delete all files in /exorde/ that are starting with core.* (no extension)
-    try:
-        # check if the /exorde/ folder exists
-        if not os.path.exists(current_folder):
-            logging.info(f"[DISK CLEANUP] Error: The directory '/exorde/' does not exist.")
-            return
-        
-        # iterate through the files in /exorde/ folder
-        for filename in os.listdir(current_folder):
-            # find all files  starting with core.* (no extension), example core.4000 core.2315331 core.1
-            if filename.startswith(target_prefix) and not filename.endswith(".json"):   
-                file_path = os.path.join(current_folder, filename)
-                # try to remove the file
-                try:
-                    if os.path.isfile(file_path):
-                        os.remove(file_path)
-                        logging.info(f"[DISK CLEANUP] Deleted file: {filename}")
-                    elif os.path.isdir(file_path):
-                        shutil.rmtree(file_path)
-                        logging.info(f"[DISK CLEANUP] Deleted directory: {filename}")
-                # handle permission errors and other exceptions
-                except Exception as e:
-                    logging.exception(f"[DISK CLEANUP] Error deleting {filename}: {e}")
-
-    except Exception as e:
-        logging.exception(f"[DISK CLEANUP]An error occurred: {e}")
-
-
-def cleanhtml(raw_html):
-    """
-    Clean HTML tags and entities from raw HTML text.
-
-    Args:
-        raw_html (str): Raw HTML text.
-
-    Yields:
-        str: Cleaned text without HTML tags and entities.
-    """
-    CLEANR = re.compile("<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});")
-    cleantext = re.sub(CLEANR, "", raw_html)
-    return cleantext
-
-
-def convert_datetime(datetime_str):
-    datetime_str = str(datetime_str)
-    dt = datett.strptime(datetime_str, "%Y-%m-%d %H:%M:%S%z")
-    converted_str = dt.strftime("%Y-%m-%dT%H:%M:%S.00Z")
-    return converted_str
-
-########################################################################
-
-def check_proxy_account_list():
-    logging.basicConfig(level=logging.INFO)
-
-    # Check if the file exists in the current directory
-    if not os.path.exists("proxy_account_list.json"):
-        logging.info("proxy_account_list.json not found in the current directory.")
-        return False
-
-    # Read the contents of the JSON file
-    try:
-        with open("proxy_account_list.json", "r") as file:
-            data = json.load(file)
-    except json.JSONDecodeError:
-        logging.info("proxy_account_list.json is not a valid JSON file.")
-        return False
-
-    # Check if the loaded data has the expected structure
-    if "accounts" not in data or not isinstance(data["accounts"], list):
-        logging.info("proxy_account_list.json does not have the expected structure.")
-        return False
-
-    num_accounts = len(data["accounts"])
-    logging.info(
-        f"[Twitter] [MULTI ACCOUNTS INIT] 'proxy_account_list.json' file OK - {num_accounts} accounts founds."
-    )
-    return True
+subreddits_top_1000 = [
+    "r/AskReddit","r/AmItheAsshole","r/teenagers","r/NoStupidQuestions","r/BaldursGate3","r/facepalm","r/AITAH","r/TaylorSwift","r/soccer","r/WhitePeopleTwitter",
+    "r/CryptoCurrency","r/FreeKarma4All","r/mildlyinfuriating","r/relationship_advice","r/politics","r/wallstreetbets","r/movies","r/gaming","r/UFOs","r/unpopularopinion",
+    "r/PublicFreakout","r/antiwork","r/diablo4","r/amiugly","r/CFB","r/LiverpoolFC","r/nba","r/Damnthatsinteresting","r/AskUK","r/ask",
+    "r/MonopolyGoTrading","r/nfl","r/therewasanattempt","r/SquaredCircle","r/worldnews","r/AskMen","r/memes","r/amiwrong","r/pcmasterrace","r/cats",
+    "r/GachaClub","r/TrueOffMyChest","r/OnePiece","r/pathofexile","r/TikTokCringe","r/neoliberal","r/todayilearned","r/biggboss","r/Overwatch","r/coys",
+    "r/TEMUcodeShare","r/news","r/KGBTR","r/FortNiteBR","r/golf","r/Genshin_Impact","r/deadbydaylight","r/leagueoflegends","r/Eldenring","r/baseball",
+    "r/meirl","r/MadeMeSmile","r/ImTheMainCharacter","r/de","r/Philippines","r/Minecraft","r/Unexpected","r/HolUp","r/TwoXChromosomes","r/FantasyPL",
+    "r/Serverlife","r/canada","r/MortalKombat","r/CrazyFuckingVideos","r/videogames","r/Christianity","r/NonCredibleDefense","r/redscarepod","r/shitposting","r/Karma4Free",
+    "r/Market76","r/europe","r/DnD","r/remnantgame","r/pics","r/EscapefromTarkov","r/atheism","r/anime","r/futebol","r/namenerds",
+    "r/conspiracy","r/weddingdress","r/explainlikeimfive","r/unitedkingdom","r/chelseafc","r/RoastMe","r/StupidFood","r/apexlegends","r/alevel","r/TooAfraidToAsk",
+    "r/DestinyTheGame","r/BlackPeopleTwitter","r/Weird","r/Warthunder","r/shittytattoos","r/FaceRatings","r/TrueUnpopularOpinion","r/argentina","r/pokemon","r/OldSchoolCool",
+    "r/television","r/Presidents","r/ufc","r/Starfield","r/AntiTrumpAlliance","r/CasualUK","r/JEENEETards","r/mildlyinteresting","r/PurplePillDebate","r/Canada_sub",
+    "r/OnePiecePowerScaling","r/australia","r/2007scape","r/technology","r/tifu","r/newzealand","r/nrl","r/Destiny","r/Warframe","r/PoliticalCompassMemes",
+    "r/PeterExplainsTheJoke","r/horror","r/Gunners","r/changemyview","r/Spiderman","r/barstoolsports","r/StreetFighter","r/totalwar","r/196","r/Teachers",
+    "r/BestofRedditorUpdates","r/doordash","r/Parenting","r/ZeducationSubmissions","r/funny","r/dating_advice","r/BeAmazed","r/ireland","r/sex","r/Italia",
+    "r/PokemonScarletViolet","r/AnarchyChess","r/motorcycles","r/AusFinance","r/reddevils","r/ChatGPT","r/Torontobluejays","r/Tinder","r/OUTFITS","r/SteamDeck",
+    "r/h3h3productions","r/playstation","r/Brawlstars","r/whatisthisbug","r/sweden","r/gardening","r/WWE","r/harrypotter","r/MapPorn","r/LosAngeles",
+    "r/dating","r/autism","r/Naruto","r/FunnyandSad","r/UkraineWarVideoReport","r/buildapc","r/Animemes","r/grandorder","r/indonesia","r/pcgaming",
+    "r/Advice","r/ffxiv","r/marvelstudios","r/Youmo","r/relationships","r/FragReddit","r/Tekken","r/serbia","r/DunderMifflin","r/Mariners",
+    "r/personalfinance","r/Romania","r/masterduel","r/polls","r/ThatsInsane","r/PremierLeague","r/startrek","r/Marriage","r/DeathBattleMatchups","r/EDH",
+    "r/DotA2","r/RandomThoughts","r/BollyBlindsNGossip","r/LoveIslandUSA","r/whatcarshouldIbuy","r/Fauxmoi","r/fivenightsatfreddys","r/BravoRealHousewives","r/transformers","r/AskAnAmerican",
+    "r/Genshin_Impact_Leaks","r/boxoffice","r/brasil","r/PersonalFinanceCanada","r/offmychest","r/NYYankees","r/BatmanArkham","r/DesignMyRoom","r/tennis","r/chile",
+    "r/bleach","r/exmormon","r/travel","r/AmericaBad","r/tjournal_refugees","r/malelivingspace","r/orioles","r/tearsofthekingdom","r/aliens","r/mexico",
+    "r/LivestreamFail","r/phillies","r/AskOldPeople","r/uknews","r/nursing","r/askgaybros","r/pettyrevenge","r/melbourne","r/trees","r/TwoBestFriendsPlay",
+    "r/WTF","r/PokemonHome","r/Showerthoughts","r/MovieSuggestions","r/entertainment","r/AskMiddleEast","r/fut","r/StarWars","r/boston","r/MMA",
+    "r/formula1","r/fantasyfootball","r/books","r/nextfuckinglevel","r/Doppleganger","r/hockey","r/LifeProTips","r/HomeImprovement","r/AussieTikTokSnark","r/batman",
+    "r/Turkey","r/ukpolitics","r/Denmark","r/wow","r/MechanicAdvice","r/firstimpression","r/ValorantCompetitive","r/wholesomememes","r/Pikmin","r/conservativeterrorism",
+    "r/army","r/careerguidance","r/delhi","r/Cooking","r/OriginalCharacter","r/NotHowGirlsWork","r/ADHD","r/vancouver","r/XboxSeriesX","r/confessions",
+    "r/trans","r/FreeKarma4You","r/DarkAndDarker","r/adhdwomen","r/Grimdank","r/GenX","r/AMA","r/40kLore","r/IAmTheMainCharacter","r/geometrydash",
+    "r/AEWOfficial","r/PokemonGoFriends","r/tipofmytongue","r/legaladvice","r/tf2","r/reddeadredemption","r/france","r/dankmemes","r/StardewValley","r/florida",
+    "r/stopdrinking","r/gtaonline","r/NoFap","r/Braves","r/femalehairadvice","r/bjj","r/india","r/Costco","r/Suomi","r/PcBuild",
+    "r/daddit","r/CasualPT","r/lookismcomic","r/Ningen","r/italy","r/adultingph","r/JoeRogan","r/whenthe","r/jobs","r/PS5",
+    "r/fcbayern","r/IndianTeenagers","r/MemePiece","r/fightporn","r/DeepRockGalactic","r/BocaJuniors","r/selfie","r/Letterboxd","r/nhl","r/malaysia",
+    "r/BabyBumps","r/DMZ","r/hungary","r/Conservative","r/skyrim","r/lego","r/football","r/vegan","r/90DayFiance","r/czech",
+    "r/Polska","r/SFGiants","r/childfree","r/Piracy","r/Finanzen","r/DynastyFF","r/Truckers","r/tattooadvice","r/Hololive","r/PokemonTCG",
+    "r/dndnext","r/thefighterandthekid","r/GunAccessoriesForSale","r/LeopardsAteMyFace","r/BigBrother","r/portugal","r/PoliticalHumor","r/Games","r/fo76","r/btd6",
+    "r/exmuslim","r/terriblefacebookmemes","r/Watches","r/mlb","r/CombatFootage","r/starterpacks","r/AskArgentina","r/Patriots","r/shrooms","r/oddlyterrifying",
+    "r/SubSimGPT2Interactive","r/Padres","r/FinalFantasy","r/ClashRoyale","r/runescape","r/Cricket","r/chicago","r/Dragonballsuper","r/rugbyunion","r/rolex",
+    "r/Seattle","r/IndiaSpeaks","r/halo","r/oddlysatisfying","r/RealEstate","r/pokemongo","r/Rainbow6","r/travisscott","r/bloxfruits","r/Wrasslin",
+    "r/magicTCG","r/Catholicism","r/Accounting","r/Sims4","r/thesopranos","r/Fantasy","r/HouseOfTheDragon","r/CATHELP","r/PokemonUnite","r/ontario",
+    "r/HistoryMemes","r/maybemaybemaybe","r/Music","r/Austria","r/traaaaaaannnnnnnnnns2","r/Adulting","r/astrologymemes","r/saudiarabia","r/Terraria","r/Wellthatsucks",
+    "r/nederlands","r/Tattoocoverups","r/Construction","r/unitedstatesofindia","r/work","r/UkrainianConflict","r/destiny2","r/KingOfTheHill","r/notinteresting","r/Chiraqology",
+    "r/realmadrid","r/cscareerquestions","r/BattleBitRemastered","r/CuratedTumblr","r/ExplainTheJoke","r/desijo_b","r/weed","r/Justrolledintotheshop","r/VaushV","r/IdiotsInCars",
+    "r/sanfrancisco","r/bayarea","r/AskAnAustralian","r/classicwow","r/askSingapore","r/NYStateOfMind","r/singularity","r/NASCAR","r/lotrmemes","r/AskACanadian",
+    "r/KafkaMains","r/AirForce","r/Marvel","r/Austin","r/airsoft","r/ConeHeads","r/counting","r/rusAskReddit","r/greece","r/Piratefolk",
+    "r/sysadmin","r/Breath_of_the_Wild","r/trashy","r/AskWomenOver30","r/mtg","r/Mommit","r/jerkofftoceleb","r/hearthstone","r/AskOuija","r/Frugal",
+    "r/shittyfoodporn","r/CasualConversation","r/homeowners","r/cars","r/Ohio","r/rupaulsdragrace","r/awfuleverything","r/BrandNewSentence","r/RocketLeagueEsports","r/furry_irl",
+    "r/femboy","r/lostarkgame","r/Andjustlikethat","r/baseballcards","r/80s","r/exjw","r/Astros","r/electricvehicles","r/WouldYouRather","r/KimetsuNoYaiba",
+    "r/nbacirclejerk","r/popheads","r/TheDeprogram","r/loseit","r/lgbt","r/YuB","r/REBubble","r/toronto","r/memesopdidnotlike","r/RimWorld",
+    "r/perth","r/OnePunchMan","r/comics","r/EnoughMuskSpam","r/pregnant","r/Warhammer40k","r/FFXVI","r/NameMyCat","r/moreplatesmoredates","r/ftm",
+    "r/CleaningTips","r/TrueChristian","r/Dodgers","r/MobileLegendsGame","r/IndianGaming","r/chess","r/asoiaf","r/JRPG","r/IASIP","r/raisedbynarcissists",
+    "r/PhotoshopRequest","r/AskNYC","r/seinfeld","r/AbruptChaos","r/Mortalkombatleaks","r/masseffect","r/Anticonsumption","r/SpidermanPS4","r/askhungary","r/angelsbaseball",
+    "r/discordVideos","r/AskConservatives","r/london","r/mbti","r/inthenews","r/walmart","r/EASportsFC","r/talk_hunfluencers","r/Firearms","r/HuntShowdown",
+    "r/GenZ","r/povertyfinance","r/UKPersonalFinance","r/kpopthoughts","r/MtF","r/KitchenConfidential","r/InstacartShoppers","r/Xennials","r/norge","r/minnesota",
+    "r/AFL","r/Diablo","r/DIY","r/CarsIndia","r/actuallesbians","r/greentext","r/Undertale","r/maui","r/UnethicalLifeProTips","r/croatia",
+    "r/VALORANT","r/mapporncirclejerk","r/BMW","r/TheOwlHouse","r/Ben10","r/delta","r/beauty","r/hiphopheads","r/LeagueOfMemes","r/RocketLeague",
+    "r/yeezys","r/roblox","r/LateStageCapitalism","r/youngpeopleyoutube","r/MandJTV","r/ShuumatsuNoValkyrie","r/playboicarti","r/ukraine","r/recruitinghell","r/germany",
+    "r/StableDiffusion","r/CallOfDutyMobile","r/kollywood","r/Gamingcirclejerk","r/Scotland","r/goodanimemes","r/Millennials","r/SmashBrosUltimate","r/Monopoly_GO","r/Boxing",
+    "r/3Dprinting","r/boardgames","r/BITSPilani","r/Plumbing","r/tacticalgear","r/Barca","r/DemonSlayerAnime","r/discgolf","r/danganronpa","r/2american4you",
+    "r/AskFrance","r/Bumble","r/electricians","r/PrequelMemes","r/FanFiction","r/thebachelor","r/MyHeroAcadamia","r/Boruto","r/90dayfianceuncensored","r/developersIndia",
+    "r/handbags","r/AmITheDevil","r/cycling","r/Fallout","r/amcstock","r/ottawa","r/Quebec","r/Guildwars2","r/yugioh","r/UKJobs",
+    "r/VeteransBenefits","r/Chainsawfolk","r/projectzomboid","r/whatisit","r/BrandonDE","r/Fishing","r/GregDoucette","r/truerateme","r/stocks","r/China_irl",
+    "r/fromsoftware","r/texas","r/OffMyChestPH","r/formuladank","r/ClassicRock","r/ProgrammerHumor","r/AutismInWomen","r/starcitizen","r/singapore","r/Denver",
+    "r/stunfisk","r/desabafos","r/ar15","r/BeelcitosMemes","r/dbz","r/Weddingattireapproval","r/Tools","r/lastimages","r/belowdeck","r/IndianDankMemes",
+    "r/VerifiedFeet","r/MarvelStudiosSpoilers","r/ClashOfClans","r/meme","r/PhoenixSC","r/CasualPH","r/malehairadvice","r/TwoSentenceHorror","r/xqcow","r/NoRules",
+    "r/PokemonSleep","r/Gundam","r/Residency","r/distressingmemes","r/BlueArchive","r/brasilivre","r/islam","r/asktransgender","r/Pathfinder2e","r/moviecritic",
+    "r/SkincareAddiction","r/LoveIslandTV","r/UberEATS","r/WarhammerCompetitive","r/manga","r/antitrampo","r/Aquariums","r/Kenya","r/lanadelrey","r/fountainpens",
+    "r/mariokart","r/nope","r/HVAC","r/chessbeginners","r/real_China_irl","r/Sephora","r/BG3Builds","r/gameofthrones","r/residentevil","r/Netherlands",
+    "r/StudentLoans","r/AskALiberal","r/clevercomebacks","r/DokkanBattleCommunity","r/japanlife","r/AmazonFC","r/crochet","r/Kappachino","r/Sneakers","r/Hawaii",
+    "r/sports","r/InstaCelebsGossip","r/Pandabuy","r/Eminem","r/farialimabets","r/MagicArena","r/pittsburgh","r/blankies","r/TheSilphRoad","r/nova",
+    "r/lawncare","r/TeenMomOGandTeenMom2","r/EngagementRings","r/debbiethepetladysnark","r/iphone","r/HilariaBaldwin","r/poker","r/flying","r/auckland","r/Scams",
+    "r/JoeyBdezSnark2","r/sportsbook","r/TroChuyenLinhTinh","r/technicallythetruth","r/evilautism","r/SeattleWA","r/Colombia","r/AnimalCrossing","r/dataisbeautiful","r/Bitcoin",
+    "r/GlobalOffensive","r/Deltarune","r/footballmanagergames","r/whowouldwin","r/punk","r/starwarsmemes","r/NewParents","r/thenetherlands","r/Louisville","r/aww",
+    "r/canadahousing","r/overwatch2","r/AustralianPolitics","r/ContagiousLaughter","r/KidsAreFuckingStupid","r/FifaCareers","r/TeslaModel3","r/lonely","r/MeJulgue","r/CrusaderKings",
+    "r/Kanye","r/OutsideLands","r/bald","r/LegalAdviceUK","r/DragonballLegends","r/ScottishFootball","r/USPS","r/whatsthisplant","r/USMC","r/crossdressing",
+    "r/howardstern","r/CitiesSkylines","r/coolguides","r/InfluencergossipDK","r/StellarCannaCoin","r/RoastMyCar","r/zelda","r/neopets","r/Berserk","r/DiWHY",
+    "r/NoMansSkyTheGame","r/BBBY","r/TheSimpsons","r/FUTMobile","r/NBA2k","r/ChoosingBeggars","r/wichsbros_DEU2023","r/AmITheAngel","r/whatsthisbug","r/fantanoforever",
+    "r/houston","r/Guitar","r/Mario","r/datingoverforty","r/WorkReform","r/FashionReps","r/SWGalaxyOfHeroes","r/pokemontrades","r/femboymemes","r/DC_Cinematic",
+    "r/HighStrangeness","r/RedditPregunta","r/Bolehland","r/beards","r/Random_Acts_Of_Amazon","r/LSD","r/worldbuilding","r/dccomicscirclejerk","r/MySingingMonsters","r/Persona5",
+    "r/geography","r/woodworking","r/southpark","r/NewTubers","r/BruceDropEmOff","r/videos","r/Whatcouldgowrong","r/realhousewives","r/TrueCrimeDiscussion","r/skyrimmods",
+    "r/redditmoment","r/Columbus","r/nvidia","r/washingtondc","r/Competitiveoverwatch","r/KerbalSpaceProgram","r/Transformemes","r/houseplants","r/collapse","r/CroatiaAlt",
+    "r/blackdesertonline","r/antinatalism","r/Teenager_Polls","r/northernireland","r/martialarts","r/JustUnsubbed","r/saltierthankrayt","r/ChainsawMan","r/Economics","r/PathOfExileBuilds",
+    "r/steak","r/KUWTKsnark","r/eu4","r/Broadway","r/HypixelSkyblock","r/denvernuggets","r/fantasybaseball","r/CPTSD","r/NFA","r/comicbookmovies",
+    "r/ksi","r/Norway","r/PetiteFashionAdvice","r/nottheonion","r/Guiltygear","r/science","r/interestingasfuck","r/virtualreality","r/rareinsults","r/bangalore",
+    "r/TIKTOKSNARKANDGOSSIP","r/yeat_","r/whatisthiscar","r/DCcomics","r/nyc","r/ShittyMapPorn","r/Fighters","r/insanepeoplefacebook","r/HousingUK","r/BattleForDreamIsland",
+    "r/forhonor","r/Stellaris","r/MakeupAddiction","r/phish","r/askTO","r/MaliciousCompliance","r/battlecats","r/gamingsuggestions","r/BisexualTeens","r/NonPoliticalTwitter",
+    "r/AppleWatch","r/Qult_Headquarters","r/armoredcore","r/thewalkingdead","r/SCJerk","r/HotWheels","r/yakuzagames","r/xmen","r/CatAdvice","r/CUETards",
+    "r/Winnipeg","r/StardustCrusaders","r/trippieredd","r/space","r/halifax","r/TattooDesigns","r/EntitledPeople","r/WatchPeopleDieInside","r/conspiracy_commons","r/ToiletPaperUSA",
+    "r/UPSers","r/ARK","r/ThePPShow","r/Sub4Sub","r/SonicTheHedgehog","r/RepTime","r/EuSouOBabaca","r/IndianBoysOnTinder","r/CasualRO","r/bindingofisaac",
+    "r/4chan","r/GunMemes","r/coins","r/tressless","r/csgo","r/Audi","r/Nanny","r/tacobell","r/ironscape","r/orangecounty",
+    "r/TerrifyingAsFuck","r/Edmonton","r/ManchesterUnited","r/Ultrakill","r/Amberverse_","r/MensRights","r/AmazonDSPDrivers","r/preppers","r/dubai","r/valheim",
+    "r/MinecraftMemes","r/bigdickproblems","r/Funnymemes","r/Pikabu","r/okbuddychicanery","r/egg_irl","r/Ticos","r/FirstTimeHomeBuyer","r/NatureIsFuckingLit","r/SelfieOver25",
+    "r/wildrift","r/Smite","r/30PlusSkinCare","r/Abortiondebate","r/AzureLane","r/Memes_Of_The_Dank","r/PokemonRoleplays","r/xbox","r/IThinkYouShouldLeave","r/WaltDisneyWorld",
+    "r/UrbanHell","r/liseliler","r/Miata","r/CarTalkUK","r/selfimprovement","r/GooglePixel","r/RaidShadowLegends","r/Genshin_Memepact","r/RomanceBooks","r/lyftdrivers",
+    "r/Watchexchange","r/vexillology","r/BreakUps","r/newjersey","r/FreeCompliments","r/brisbane","r/PoliticalCompass","r/Amd","r/CODZombies","r/DevilMayCry",
+    "r/AskMechanics","r/Vanderpumpaholics","r/AdorableNudes","r/NoJumper","r/Totaldrama","r/mylittlepony","r/ffxivdiscussion","r/bisexual","r/indiadiscussion","r/kingcobrajfs",
+    "r/MTB","r/WFH","r/snappijuorut","r/Dallas","r/AO3","r/breakingbad","r/ufo","r/DebateReligion","r/PoliticalMemes","r/Gunpla",
+    "r/Rabbits","r/Slovenia","r/ich_iel","r/splatoon","r/BanPitBulls","r/suggestmeabook","r/FLMedicalTrees","r/relacionamentos","r/FireEmblemHeroes","r/GoodAssSub",
+    "r/HFY","r/19684","r/RobloxAvatars","r/whatisthisthing","r/OtomeIsekai","r/Kengan_Ashura","r/JUSTNOMIL","r/USCIS","r/homelab","r/gundeals",
+    "r/doctorsUK","r/Entrepreneur","r/bluey","r/careeradvice","r/kolkata","r/arborists","r/TheMajorityReport","r/4Runner","r/GalaxyFold","r/gaybros",
+    "r/Calgary","r/furry","r/csMajors","r/Bedbugs","r/DBZDokkanBattle","r/mumbai","r/popheadscirclejerk","r/marvelmemes","r/Egypt","r/Topster",
+]
 
 
-def check_env():
-    if check_proxy_account_list():
-        return True
-    # Check if the .env file exists
-    if not os.path.exists(".env"):
-        logging.info("[Twitter] Solo account mode - .env file does not exist.")
-        return False
-
-    # Read the .env file
-    with open(".env", "r") as f:
-        content = f.read()
-
-    # Split the content into lines
-    lines = content.split("\n")
-
-    # Define a dictionary to hold the keys and values
-    keys = {"SCWEET_EMAIL": None, "SCWEET_PASSWORD": None, "SCWEET_USERNAME": None}
-
-    # Parse each line
-    for line in lines:
-        if "=" in line:
-            key, value = line.split("=", 1)
-            if key in keys and value != "":
-                keys[key] = value
-
-    # Check if all keys have non-null values
-    for key in keys:
-        if keys[key] is None:
-            return False
-
-    # If all checks pass, return True
-    return True
-
-
-#############################################################################
-#############################################################################
-#############################################################################
-
-current_dir = Path(__file__).parent.absolute()
-
-def load_env_variable(key, default_value=None, none_allowed=False):
+async def load_env_variable(key, default_value=None, none_allowed=False):
     v = os.getenv(key, default=default_value)
     if v is None and not none_allowed:
         raise RuntimeError(f"{key} returned {v} but this is not allowed!")
     return v
 
 
-def get_email(env):
-    global _EMAIL
+async def get_email(env):
     dotenv.load_dotenv(env, verbose=True)
-    default_var = load_env_variable("SCWEET_EMAIL", none_allowed=True)
-    if _EMAIL is not None and len(_EMAIL) > 0:
-        default_var = _EMAIL
-    return default_var
-
-
-def get_password(env):
-    global _PASSWORD
-    dotenv.load_dotenv(env, verbose=True)
-    default_var = load_env_variable("SCWEET_PASSWORD", none_allowed=True)
-    if _PASSWORD is not None and len(_PASSWORD) > 0:
-        default_var = _PASSWORD
-    return default_var
-
-
-def get_username(env):
-    global _USERNAME
-    dotenv.load_dotenv(env, verbose=True)
-    default_var = load_env_variable("SCWEET_USERNAME", none_allowed=True)
-    if _USERNAME is not None and len(_USERNAME) > 0:
-        default_var = _USERNAME
-    return default_var
-
-
-def get_proxy(env):
-    global _PROXY
-    dotenv.load_dotenv(env, verbose=True)
-    default_var = load_env_variable("HTTP_PROXY", none_allowed=True)
-    if _PROXY is not None and len(_PROXY) > 0:
-        default_var = _PROXY
-    return default_var
-
-
-def get_data(card):
-    """Extract data from tweet card"""
-    image_links = []
-
-    try:
-        username = card.find_element(by=By.XPATH, value=".//span").text
-    except:
-        return
-
-    try:
-        handle = card.find_element(
-            by=By.XPATH, value='.//span[contains(text(), "@")]'
-        ).text
-    except:
-        return
-
-    try:
-        postdate = card.find_element(by=By.XPATH, value=".//time").get_attribute(
-            "datetime"
-        )
-    except:
-        return
-
-    try:
-        text = card.find_element(
-            by=By.XPATH, value='.//div[@data-testid="tweetText"]'
-        ).text
-    except:
-        text = ""
-
-    try:
-        embedded = card.find_element(by=By.XPATH, value=".//div[2]/div[2]/div[2]").text
-    except:
-        embedded = ""
-
-    try:
-        reply_cnt = card.find_element(
-            by=By.XPATH, value='.//div[@data-testid="reply"]'
-        ).text
-    except:
-        reply_cnt = 0
-
-    try:
-        retweet_cnt = card.find_element(
-            by=By.XPATH, value='.//div[@data-testid="retweet"]'
-        ).text
-    except:
-        retweet_cnt = 0
-
-    try:
-        like_cnt = card.find_element(
-            by=By.XPATH, value='.//div[@data-testid="like"]'
-        ).text
-    except:
-        like_cnt = 0
-
-    try:
-        elements = card.find_elements(
-            by=By.XPATH,
-            value='.//div[2]/div[2]//img[contains(@src, "https://pbs.twimg.com/")]',
-        )
-        for element in elements:
-            image_links.append(element.get_attribute("src"))
-    except:
-        image_links = []
-
-    try:
-        promoted = (
-            card.find_element(by=By.XPATH, value=".//div[2]/div[2]/[last()]//span").text
-            == "Promoted"
-        )
-    except:
-        promoted = False
-    if promoted:
-        return
-
-    # get a string of all emojis contained in the tweet
-    try:
-        emoji_tags = card.find_elements(
-            by=By.XPATH, value='.//img[contains(@src, "emoji")]'
-        )
-    except:
-        return
-    emoji_list = []
-    for tag in emoji_tags:
-        try:
-            filename = tag.get_attribute("src")
-            emoji = chr(
-                int(re.search(r"svg\/([a-z0-9]+)\.svg", filename).group(1), base=16)
-            )
-        except AttributeError:
-            continue
-        if emoji:
-            emoji_list.append(emoji)
-    emojis = " ".join(emoji_list)
-
-    # tweet url
-    try:
-        element = card.find_element(
-            by=By.XPATH, value='.//a[contains(@href, "/status/")]'
-        )
-        tweet_url = element.get_attribute("href")
-    except:
-        return
-
-    tweet = (
-        username,
-        handle,
-        postdate,
-        text,
-        embedded,
-        emojis,
-        reply_cnt,
-        retweet_cnt,
-        like_cnt,
-        image_links,
-        tweet_url,
-    )
-    return tweet
-
-
-
-def get_chrome_path():
-    if os.path.isfile("/usr/bin/chromium-browser"):
-        return "/usr/bin/chromium-browser"
-    elif os.path.isfile("/usr/bin/chromium"):
-        return "/usr/bin/chromium"
-    elif os.path.isfile("/usr/bin/chrome"):
-        return "/usr/bin/chrome"
-    elif os.path.isfile("/usr/bin/google-chrome"):
-        return "/usr/bin/google-chrome"
+    now_utc = datett.now(pytz.utc).time()
+    start_time = tttime(0, 0)
+    end_time = tttime(12, 0)
+    if start_time <= now_utc < end_time:
+        default_var = await load_env_variable("SCWEET_USERNAME", none_allowed=True)
+        if len(default_var) < 70:
+            default_var = await load_env_variable("SCWEET_EMAIL", none_allowed=True)
     else:
-        return None
-
-
-
-def verify_account_structure(account):
-    required_keys = [
-        "proxy",
-        "proxy_username",
-        "proxy_password",
-        "proxy_port",
-        "email",
-        "password",
-        "username",
-        "last_used",
-        "duration",
-        "cookies_file",
-    ]
-    if not all(key in account for key in required_keys):
-        logging.error("Account is missing required keys: %s", account)
-        return False
-    return True
-
-
-def select_proxy_and_account_if_any():
-
-    result_account = None
-    try:
-        # Attempt to open and read the "proxy_account_list.json" file
-        with open(PROXY_ACCOUNT_MAP_FP, "r") as file:
-            data = json.load(file)
-    except FileNotFoundError:
-        logging.error("[MULTI ACCOUNTS] File 'proxy_account_list.json' not found. - USING DEFAULT SOLO ACCOUNT MODE")
-        return None
-    except json.JSONDecodeError:
-        logging.error("[MULTI ACCOUNTS] Error decoding 'proxy_account_list.json'.")
-        return None
-
-    logging.info("\n******************* ________ SELECTION - MULTI ACCOUNT MODE ________ ********************")
-
-    # Check if the "data" is a dictionary and it contains the key "accounts"
-    if not isinstance(data, dict) or "accounts" not in data:
-        logging.error("[MULTI ACCOUNTS] 'proxy_account_list.json' does not have the expected structure.")
-        return None
-
-    # Extract the "accounts" list from the JSON data
-    accounts = data["accounts"]
-
-    # If the "accounts" list is empty, return None
-    if not accounts:
-        logging.warning("[MULTI ACCOUNTS] 'proxy_account_list.json' does not contain any accounts.")
-        return None
-
-    # Verify account structure and attributes
-    for account in accounts:
-        if not verify_account_structure(account):
-            return None
-
-    # Sort the accounts based on the "last_used" timestamp in descending order
-    sorted_accounts = sorted(accounts, key=lambda x: x["duration"], reverse=True)
-    oldest_used_accounts = sorted(accounts, key=lambda x: x["last_used"], reverse=True)
-
-    # Get the parameters from the JSON data
-    parameters = data.get("parameters", {})
-    rotate_account_after_duration = parameters.get(
-        "rotate_account_after_duration", 3600
-    )
-
-    # Iterate through the sorted accounts
-    for account in sorted_accounts:
-        if account["duration"] <= rotate_account_after_duration:
-            logging.info(
-                "[Twitter] [MULTI ACCOUNTS] _______ Rotation system: selected account '%s'. _______",
-                account["username"],
-            )
-            account["last_used"] = int(time.time())
-            result_account = account
-            break
-        elif account["duration"] <= rotate_account_after_duration:
-            logging.info(
-                "[Twitter] [MULTI ACCOUNTS] Using account '%s' as duration is less than rotate_account_after_duration.",
-                account["username"],
-            )
-            account["last_used"] = int(time.time())
-            result_account = account
-            break
-
-    if result_account is None:
-        # If no suitable account is found, select the oldest account and reset its "last_used" timestamp
-        oldest_account = oldest_used_accounts[-1]
-        logging.info(
-            "[Twitter] [MULTI ACCOUNTS] No suitable account found with duration <= %d. Selecting the oldest account: '%s' and reseting its duration.",
-            rotate_account_after_duration,
-            oldest_account["username"],
-        )
-        oldest_account["last_used"] = int(time.time())
-        oldest_account["duration"] = 0  # reset this duration
-        result_account = oldest_account
-
-    # Write the updated data back to the account file
-    try:
-        with open(PROXY_ACCOUNT_MAP_FP, "w") as file:
-            json.dump(data, file, indent=4)
-    except IOError:
-        logging.error(
-            "[Twitter] [MULTI ACCOUNTS] Error writing to 'proxy_account_list.json'."
-        )
-        return
-
-    # write
-    return result_account
-
-
-def update_proxy_account_map():
-    global _EMAIL, _USERNAME, _PASSWORD, _COOKIE_FP, RATE_LIMITED, ITEMS_PRODUCED_SESSION
-    logging.info(
-        "[Twitter] [MULTI ACCOUNTS] Closing session: updating proxy_account_list.json file"
-    )
-
-    # Read the current data from the account file
-    try:
-        with open(PROXY_ACCOUNT_MAP_FP, "r") as file:
-            data = json.load(file)
-    except FileNotFoundError:
-        logging.error(
-            "[Twitter] [MULTI ACCOUNTS] File 'proxy_account_list.json' not found."
-        )
-        return
-    except json.JSONDecodeError:
-        logging.error(
-            "[Twitter] [MULTI ACCOUNTS] Error decoding 'proxy_account_list.json'."
-        )
-        return
-    now = int(time.time())
-    duration_malus = 3 * 3600 if ( RATE_LIMITED or ITEMS_PRODUCED_SESSION == 0 ) else 0
-    if RATE_LIMITED:
-        logging.info(
-            f"[Twitter] [MULTI ACCOUNTS]  Current worker seem rate limited or buggy, we add 3 hours to its counter, to wait."
-        )
-    for account in data["accounts"]:
-        if account["email"] == _EMAIL:
-            last_used = account["last_used"]
-            if last_used == 0:
-                last_used = now - 120
-            new_duration = now - last_used + duration_malus + 60
-            logging.info(
-                f"[Twitter] [MULTI ACCOUNTS] -\tCurrent session duration: {new_duration} seconds"
-            )
-            if account["duration"] + new_duration:
-                account["duration"] += new_duration
-            account["cookies_file"] = _COOKIE_FP
-            account["last_used"] = now
-            break
-    # Write the updated data back to the account file
-    try:
-        with open(PROXY_ACCOUNT_MAP_FP, "w") as file:
-            json.dump(data, file, indent=4)
-    except IOError:
-        logging.error("Error writing to 'proxy_account_list.json'.")
-        return
-
-
-manifest_json = """
-{
-    "version": "1.0.0",
-    "manifest_version": 2,
-    "name": "Chrome Proxy",
-    "permissions": [
-        "proxy",
-        "tabs",
-        "unlimitedStorage",
-        "storage",
-        "<all_urls>",
-        "webRequest",
-        "webRequestBlocking"
-    ],
-    "background": {
-        "scripts": ["background.js"]
-    },
-    "minimum_chrome_version":"22.0.0"
-}
-"""
-
-
-def get_background_js(PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS):
-
-    background_js = """
-    var config = {
-            mode: "fixed_servers",
-            rules: {
-            singleProxy: {
-                scheme: "http",
-                host: "%s",
-                port: parseInt(%s)
-            },
-            bypassList: ["localhost"]
-            }
-        };
-
-    chrome.proxy.settings.set({value: config, scope: "regular"}, function() {});
-
-    function callbackFn(details) {
-        return {
-            authCredentials: {
-                username: "%s",
-                password: "%s"
-            }
-        };
-    }
-
-    chrome.webRequest.onAuthRequired.addListener(
-                callbackFn,
-                {urls: ["<all_urls>"]},
-                ['blocking']
-    );
-    """ % (
-        PROXY_HOST,
-        PROXY_PORT,
-        PROXY_USER,
-        PROXY_PASS,
-    )
-    return background_js
-
-class CriticalFailure(Exception):
-    pass
-
-def init_driver(
-    headless=True, show_images=False, option=None, firefox=False, env=".env"
-):
-    """initiate a chromedriver or firefoxdriver instance
-    --option : other option to add (str)
-    """
-    global driver, MULTI_ACCOUNT_MODE
-    global _COOKIE_FP, _EMAIL, _USERNAME, _PASSWORD, _PROXY
-    options = ChromeOptions()
-    # driver_path = '/usr/local/bin/chromedriver'
-    logging.info("Adding options to Chromium Driver")
-    binary_path = get_chrome_path()
-    options.binary_location = binary_path
-    logging.info(f"\tSelected Chrome executable path = {binary_path}")
-    options.add_argument("--no-sandbox")
-    options.add_argument(
-        "--disable-blink-features"
-    )  # Disable features that might betray automation
-    # options.add_argument(
-    #     "--disable-gpu"
-    # )  # GPU rendering
-    options.add_argument(
-        "--disable-blink-features=AutomationControlled"
-    )  # Disables a Chrome flag that shows an 'automation' toolbar
-    options.add_experimental_option(
-        "excludeSwitches", ["enable-automation"]
-    )  # Disable automation flags
-    options.add_experimental_option(
-        "useAutomationExtension", False
-    )  # Disable automation extensions
-    logging.info("\tDisable automation extensions & flags")
-    options.add_argument("--disable-dev-shm-usage")
-    # options.add_argument("user-data-dir=selenium")
-    options.add_argument("start-maximized")
-    options.add_argument("disable-infobars")
-    options.add_argument("--disable-extensions")
-    options.add_argument('--disable-application-cache')
-    selected_user_agent = random.choice(user_agents)
-    options.add_argument(f"user-agent={selected_user_agent}")
-    logging.info("\tselected_user_agent :  %s", selected_user_agent)
-
-    if headless is True:
-        headless_mode = "--headless"
-        options.add_argument(headless_mode)
-        logging.info(f"\theadless mode used : {headless_mode}")      
-
-    options.add_argument("log-level=3")
-    if show_images == False and firefox == False:
-        prefs = {"profile.managed_default_content_settings.images": 2}
-        options.add_experimental_option("prefs", prefs)
-    if option is not None:
-        options.add_argument(option)
-    options.add_experimental_option("extensionLoadTimeout", 100000)
-    try:
-        ### DEBUGGING/DEVELOPMENT
-        # driver = webdriver.Chrome(
-        #     service=Service(ChromeDriverManager().install()), options=options
-        # ) 
-        ### DOCKER 
-        driver_path = '/usr/local/bin/chromedriver'
-        logging.info(f"Opening driver from path = {driver_path}")
-        driver = webdriver.Chrome(service=Service(driver_path), options=options)
-        driver.maximize_window()
-    except Exception as e:
-        logging.exception("[TWITTER] [CRITICAL FAILURE] Failure to initialize the chrome driver")
-        raise CriticalFailure("")
-    if driver is None:        
-        raise CriticalFailure("[TWITTER] [CRITICAL FAILURE] Failure to initialize the chrome driver")
-
-    driver.set_page_load_timeout(8)
-    return driver
-
-
-def log_search_page(
-    since,
-    until_local,
-    lang,
-    display_type,
-    word,
-    to_account,
-    from_account,
-    mention_account,
-    hashtag,
-    filter_replies,
-    proximity,
-    geocode,
-    minreplies,
-    minlikes,
-    minretweets,
-):
-    """ Search for this query between since and until_local"""
-    global driver
-    logging.info("Log search page =  %s", driver)
-    # format the <from_account>, <to_account> and <hash_tags>
-    from_account = (
-        "(from%3A" + from_account + ")%20" if from_account is not None else ""
-    )
-    to_account = "(to%3A" + to_account + ")%20" if to_account is not None else ""
-    mention_account = (
-        "(%40" + mention_account + ")%20" if mention_account is not None else ""
-    )
-    hash_tags = "%20(%23" + hashtag + ")%20" if hashtag is not None else ""
-
-    since = ""  # "since%3A" + since + "%20"
-
-    if display_type == "Latest" or display_type == "latest":
-        display_type = "&f=live"
-    # proximity
-    if proximity == True:
-        proximity = "&lf=on"  # at the end
-    else:
-        proximity = ""
-
-    path = (
-        "https://x.com/search?q="
-        + word
-        + hash_tags
-        + since
-        + "&src=typed_query"
-        + display_type
-        + proximity
-    )
-    driver.get(path)
-    sleep(1)
-
-    if "i/flow/login" in driver.current_url:
-        logging.info("[TWITTER] Problem detected, interrupting session early.")
-        raise CriticalFailure("Problem detected, interrupting session early")
-        
-    return path
-
-
-def type_slow(string, element):
-    for character in str(string):
-        element.send_keys(character)
-        sleep(random.uniform(0.05, 0.27))
-
-
-def print_first_and_last(s):
-    if len(s) < 2:
-        return s
-    else:
-        return s[0] + "***" + s[-1]
-
-
-def check_and_kill_processes(process_names):
-    for process_name in process_names:
-        try:
-            # Find processes by name
-            result = subprocess.check_output(["pgrep", "-f", process_name])
-            # If the previous command did not fail, we have some processes to kill
-            if result:
-                logging.info(f"[Chrome] Killing old processes for: {process_name}")
-                subprocess.run(["pkill", "-f", process_name])
-        except subprocess.CalledProcessError:
-            # If pgrep fails to find any processes, it throws an error. We catch that here and assume no processes are running
-            logging.info(f"[Chrome] No running processes found for: {process_name}")
-
-
-def save_cookies(driver_):
-    # Save cookies
-    file_to_use = "cookies.pkl"
-    if MULTI_ACCOUNT_MODE:
-        if _COOKIE_FP is not None and len(_COOKIE_FP) > 0:
-            file_to_use = _COOKIE_FP
-    pickle.dump(driver_.get_cookies(), open(file_to_use, "wb"))
-    logging.info(f"[Twitter Chrome] Saved cookies to {file_to_use}")
-
-
-def clear_cookies():
-    file_to_use = "cookies.pkl"
-    if _COOKIE_FP is not None and len(_COOKIE_FP) > 0:
-        file_to_use = _COOKIE_FP
-    try:
-        open(file_to_use, "wb").close()
-        logging.info("Cleared cookies.")
-    except Exception as e:
-        logging.info("Clear cookies error: %s", e)
-
-
-def log_in(env=".env", wait=1.2):
-    global driver
-
-    cookies_added = 0
-    target_home_url = "https://x.com/home"
-    target_home = "x.com/home"
-    target_bis = "redirect_after_login=%2Fhome"
-    driver.get("https://www.x.com/")
-    sleep(1)
-    email = get_email(env)  # const.EMAIL
-    password = get_password(env)  # const.PASSWORD
-    username = get_username(env)  # const.USERNAME
-    try:
-        # Load cookies if they exist
-        auth_token_cookie = {
-            "name": "auth_token",
-            "value": email,
-            "domain": ".x.com",
-            "secure": True,
-            "httpOnly": True
-        }
-        driver.add_cookie(auth_token_cookie)
-    except Exception as e:
-        logging.exception("An error occured retrieving cookies: %s", e)
-
-    sleep(random.uniform(0, 1))
-    logging.info("[Twitter Chrome] refreshing to Home after cookie import.")
-    sleep(random.uniform(0, 1))
-    driver.get(target_home_url)
-    logging.info("[Twitter Chrome] Checking if we are on same URL...")
-    sleep(random.uniform(0, 2))
-    # Check if we are indeed on the target URL
-    logging.info("[Twitter Chrome] Current URL = %s", str(driver.current_url))
-    # Target bis reached
-    if target_bis in driver.current_url:
-        sleep(random.uniform(0, 2))
-        logging.info("[Twitter Chrome] Found ourselves on target bis, retying..")
-        driver.get(target_home_url)
-        sleep(random.uniform(0, 1))
-
-    # email = data["mail"]  # const.EMAIL
-    # password = data["password"]  # const.PASSWORD
-    # username = data["username"]  # const.USERNAME
-
-    logging.info("\t[Twitter] Email provided =  %s", email)
-    logging.info(
-        "\t[Twitter] Password provided =  %s", print_first_and_last(password)
-    )
-    logging.info("\t[Twitter] Username provided =  %s", username)
+        default_var = await load_env_variable("SCWEET_EMAIL", none_allowed=True)
     
-    login_bar_found = False
-    if check_exists_by_xpath('//a[@href="/login"]', driver):
-        logging.info("[Twitter Chrome]  Login bar at the bottom: Found")
-        login_bar_found = True
+    return default_var
+
+
+async def get_token(env):
+    dotenv.load_dotenv(env, verbose=True)
+    default_var = await load_env_variable("SCWEET_USERNAME", none_allowed=True)
+    return default_var
+
+
+async def set_session_cookies(session):
+    reddit_session_cookie = await get_email(".env")
+    # #cookie = aiohttp.CookieJar()        
+    # cookie_jar.update_cookies({'reddit_session': reddit_session_cookie}, response_url='https://www.reddit.com')
+    session.cookie_jar.update_cookies({'reddit_session': reddit_session_cookie, 'domain': '.reddit.com'})
+    # cookie.update_cookies({'reddit_session': reddit_session_cookie}, response_url=response_url)
+    # session.cookie_jar.update_cookies({'reddit_session': reddit_session_cookie, 'domain': '.reddit.com'})
+    # cookie_jar = aiohttp.CookieJar()
+    # cookie_jar.update_cookies({'reddit_session': reddit_session_cookie}, response_url='https://www.reddit.com')
+    # session.cookie_jar.update_cookies({
+    #         'reddit_session': reddit_session_cookie
+    #     }, response_url='https://www.reddit.com')
+    logger.info("[Reddit] Session cookies updated")
+
+
+async def find_random_subreddit_for_keyword(keyword: str = "BTC"):
+    """
+    Generate a subreddit URL using the search tool with `keyword`.
+    It randomly chooses one of the resulting subreddit.
+    """
+    logging.info("[Reddit] generating subreddit target URL.")
+    try:
+        async with aiohttp.ClientSession() as session:
+            reddit_session_cookie = await get_email(".env") 
+            cookies = {'reddit_session': reddit_session_cookie}
+            session.cookie_jar.update_cookies(cookies)
+            #session.cookie_jar.update_cookies({'reddit_session': reddit_session_cookie, 'domain': '.reddit.com'})
+            async with session.get(
+                f"https://www.reddit.com/search/?q={keyword}&type=sr",
+                headers={"User-Agent": random.choice(USER_AGENT_LIST)},              
+                timeout = BASE_TIMEOUT
+            ) as response:
+                html_content = await response.text()
+                tree = html.fromstring(html_content)
+                urls = [
+                    url
+                    for url in tree.xpath('//a[contains(@href, "/r/")]//@href')
+                    if not "/r/popular" in url
+                ]
+                result = f"https:/reddit.com{random.choice(urls)}/new"
+                return result
+    finally:
+        logging.info("Session close")
+        await session.close()
+
+
+async def generate_url(autonomous_subreddit_choice=0.35, keyword: str = "BTC"):
+    random_value = random.random()
+    if random_value < autonomous_subreddit_choice:
+        logging.info("[Reddit] Exploration mode!")  
+        return await find_random_subreddit_for_keyword(keyword)
     else:
-        logging.info("[Twitter Chrome]  Login bar at the bottom: Not Found")
-    if not target_home in driver.current_url or login_bar_found == True:
-        logging.info("[Twitter] Not on target, let's log in...")
-        clear_cookies()
-
-        driver.get("https://x.com/i/flow/login")
-
-        email_xpath = '//input[@autocomplete="username"]'
-        password_xpath = '//input[@autocomplete="current-password"]'
-        username_xpath = '//input[@data-testid="ocfEnterTextTextInput"]'
-
-        sleep(3)
-        # enter email
-        logging.info("[Twitter Chrome] Current URL = %s", driver.current_url)
-        logging.info("Entering Email..")
-        email_el = driver.find_element(by=By.XPATH, value=email_xpath)
-        # enter password
-        if email_el:
-            logging.info("[Login] found email element")
-        sleep(random.uniform(wait, wait + 1))
-        # email_el.send_keys(email)
-        type_slow(email, email_el)
-        sleep(random.uniform(wait, wait + 1))
-        email_el.send_keys(Keys.RETURN)
-        sleep(random.uniform(wait, wait + 1))
-        # in case twitter spotted unusual login activity : enter your username
-        if check_exists_by_xpath(username_xpath, driver):
-            logging.info("Unusual Activity Mode")
-            username_el = driver.find_element(by=By.XPATH, value=username_xpath)
-            if username_el:
-                logging.info("[Unusual Activity] found username element")
-
-            sleep(random.uniform(wait, wait + 1))
-            logging.info("\tEntering username..")
-            # username_el.send_keys(username)
-            type_slow(username, username_el)
-            sleep(random.uniform(wait, wait + 1))
-            username_el.send_keys(Keys.RETURN)
-            sleep(random.uniform(wait, wait + 1))
-        password_el = driver.find_element(by=By.XPATH, value=password_xpath)
-        # enter password
-        if password_el:
-            logging.info("[Login] found password element")
-        # password_el.send_keys(password)
-        logging.info("\tEntering password...")
-        type_slow(password, password_el)
-        sleep(random.uniform(wait, wait + 1))
-        password_el.send_keys(Keys.RETURN)
-        sleep(random.uniform(0, 1))
-        driver.get(target_home_url)
-        sleep(random.uniform(1, 1))
-
-        logging.info(
-            "[Twitter Login] Current URL after entering password = %s",
-            str(driver.current_url),
-        )
-        if target_home in driver.current_url:
-            logging.info("[Twitter Login] \tSucces!!!")
-            save_cookies(driver)
-    else:
-        logging.info("[Twitter] We are already logged in")
+        if random.random() < 0.5:     
+            logging.info("[Reddit] Top 225 Subreddits mode!")       
+            selected_subreddit_ = "https://reddit.com/" + random.choice(subreddits_top_225)+";"+"https://reddit.com/" + random.choice(subreddits_top_225)+";"+"https://reddit.com/" + random.choice(subreddits_top_225)+";"+"https://reddit.com/" + random.choice(subreddits_top_225)+";"+"https://reddit.com/" + random.choice(subreddits_top_225)+";"+"https://reddit.com/" + random.choice(subreddits_top_225)
+        else:            
+            logging.info("[Reddit] Top 1000 Subreddits mode!")
+            selected_subreddit_ = "https://reddit.com/" + random.choice(subreddits_top_1000)+";"+"https://reddit.com/" + random.choice(subreddits_top_1000)+";"+"https://reddit.com/" + random.choice(subreddits_top_1000)+";"+"https://reddit.com/" + random.choice(subreddits_top_1000)+";"+"https://reddit.com/" + random.choice(subreddits_top_1000)+";"+"https://reddit.com/" + random.choice(subreddits_top_1000)
+        
+        return selected_subreddit_
 
 
-def is_within_timeframe_seconds(dt_str, timeframe_sec):
-    # Convert the datetime string to a datetime object
-    dt = datett.strptime(dt_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+def is_within_timeframe_seconds(input_timestamp, timeframe_sec):
+    input_timestamp = int(input_timestamp)
+    current_timestamp = int(time.time())  # Get the current UNIX timestamp
+    elapsed_time = current_timestamp - input_timestamp
 
-    # Make it aware about timezone (UTC)
-    dt = dt.replace(tzinfo=timezone.utc)
-
-    # Get the current datetime in UTC
-    current_dt = datett.now(timezone.utc)
-
-    # Calculate the time difference between the two datetimes
-    time_diff = current_dt - dt
-
-    # Check if the time difference is within the specified timeframe in seconds
-    if abs(time_diff) <= timedelta(seconds=timeframe_sec):
+    if elapsed_time <= timeframe_sec:
         return True
     else:
         return False
 
 
-class RateLimited(Exception):
-    def __init__(self, message="Rate limit exceeded"):
-        self.message = message
-        super().__init__(self.message)
+def format_timestamp(timestamp):
+    dt = datett.fromtimestamp(timestamp, timezone.utc)
+    formatted_timestamp = dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    return formatted_timestamp
 
+def extract_subreddit_name(input_string):
+    match = re.search(r'r/([^/]+)', input_string)
+    if match:
+        return match.group(1)
+    return None
 
-max_old_tweets_successive = 2
+async def scrap_post(url: str) -> AsyncGenerator[Item, None]:
+    resolvers = {}
 
-
-def keep_scroling(
-    data,
-    tweet_ids,
-    scrolling,
-    tweet_parsed,
-    limit,
-    scroll,
-    last_position,
-    save_images=False
-):
-    """ scrolling function for tweets crawling"""
-    global driver, MAX_EXPIRATION_SECONDS, RATE_LIMITED
-    global gl_keyword
-
-    save_images_dir = "/images"
-    if save_images == True:
-        if not os.path.exists(save_images_dir):
-            os.mkdir(save_images_dir)
-
-    rate_limitation = False
-    successsive_old_tweets = 0
-    while scrolling and tweet_parsed < limit:
-        sleep(random.uniform(0.5, 1.5))
-        # get the card of tweets
-        page_cards = driver.find_elements(
-            by=By.XPATH, value='//article[@data-testid="tweet"]'
-        )  # changed div by article
-        logging.info("[XPath] page cards found = %s", len(page_cards))
-        if len(page_cards) == 0 and False:
-            # check if we are rate-limited
-            try:
-                # wait for the popup to become visible, up to 4s (1.5s delay + 3.5s visibility)
-                wait = WebDriverWait(driver, 4)
-                element = wait.until(
-                    lambda x: x.find_element(
-                        By.XPATH, '//*[contains(text(),"Sorry, you are rate limited")]'
-                    )
-                    or x.find_element(
-                        By.CLASS_NAME,
-                        "css-1dbjc4n r-1awozwy r-1kihuf0 r-l5o3uw r-z2wwpe r-18u37iz r-1wtj0ep r-zd98yo r-xyw6el r-105ug2t",
-                    )
-                )
-
-                # if we found the element, print that it was found
-                logging.info(
-                    "********\n********\n********\n\t\tYOUR TWITTER ACCOUNT IS NOW RATE LIMITED\n\n********\n********\n********"
-                )
-                rate_limitation = True
-                RATE_LIMITED = True
-                raise RateLimited("Twitter Account Viewing Rate Limit Exceeded")
-
-                return (
-                    data,
-                    tweet_ids,
-                    scrolling,
-                    tweet_parsed,
-                    scroll,
-                    last_position,
-                    rate_limitation,
-                )
-            except Exception as e:
-                logging.info(
-                    "[XPath] Rate limitation - can't find any error popup - %s", e
-                )
-        for card in page_cards:
-            getUsername = card.find_element(by=By.XPATH, value=".//span").text
-            getPostdate = card.find_element(by=By.XPATH, value=".//time").get_attribute(
-                "datetime"
-            )
-            try:
-                getContent = card.find_element(
-                    by=By.XPATH, value='.//div[@data-testid="tweetText"]'
-                ).text
-            except:
-                getContent = ""
-            if (
-                gl_keyword.lower() in getUsername.lower()
-                and not gl_keyword.lower() in getContent.lower()
-            ) or not getContent.strip() or not is_within_timeframe_seconds(str(getPostdate), MAX_EXPIRATION_SECONDS):
-                logging.info(
-                    "Keyword not found in text, but in author's name, skipping this false positive or empty content or old tweet"
-                )
-                continue
-            
-            tweet = get_data(card)
-            logging.info("[XPath] Tweet visible currently = %s", len(page_cards))
-            if tweet:
-                # check if the tweet is unique
-                tweet_id = "".join(str(item) for item in tweet[:-2])
-                last_date = str(tweet[2])
-                if tweet_id not in tweet_ids:
-                    if is_within_timeframe_seconds(last_date, MAX_EXPIRATION_SECONDS):
-                        tweet_ids.add(tweet_id)
-                        data.append(tweet)
-                        logging.info(f"[Tweet] Date = {last_date}")
-                        logging.info("[Twitter Selenium] Found Tweet:  %s", tweet)
-                        tweet_parsed += 1
-                        successsive_old_tweets = 0
-                    else:
-                        logging.info("[Twitter Selenium] Old Tweet:  %s", tweet[3])
-                        successsive_old_tweets += 1
-                    if (
-                        successsive_old_tweets >= max_old_tweets_successive
-                        or tweet_parsed >= limit
-                    ):
-                        return (
-                            data,
-                            tweet_ids,
-                            scrolling,
-                            tweet_parsed,
-                            scroll,
-                            last_position,
-                            rate_limitation,
-                        )
-        scroll_attempt = 0
-        while tweet_parsed < limit:
-            # check scroll position
-            scroll += 1
-            sleep(random.uniform(0.5, 1.5))
-            # get current position and total scroll height
-            curr_position = driver.execute_script("return window.pageYOffset;")
-            total_height = driver.execute_script("return document.body.scrollHeight;")
-
-            # scroll to a random position between current position and total height
-            random_scroll_position = random.uniform(curr_position, total_height)
-            logging.info("Scrolling %s", str(random_scroll_position))
-            driver.execute_script(f"window.scrollTo(0, {random_scroll_position});")
-            # driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-            curr_position = driver.execute_script("return window.pageYOffset;")
-            # try:
-            #     logging.info("Hide media....")
-            #     WebDriverWait(driver, 5).until(
-            #         EC.presence_of_all_elements_located((By.XPATH, "//article[@data-testid='tweet']//div[@data-testid='tweetText']"))
-            #     )
-            #     driver.execute_script("""let mediaCards = document.querySelectorAll('[data-testid="card.layoutLarge.media"], [data-testid="tweetPhoto"]');mediaCards.forEach(card => {let prevDiv1 = card.parentElement;if (prevDiv1) prevDiv1.parentElement.style.display = 'none';});""")
-            #     driver.execute_script("""let repEWl = document.querySelectorAll('[data-testid="reply"]');repEWl.forEach(el => {let prevDiv1 = el.parentElement;if (prevDiv1) prevDiv1.parentElement.style.marginTop = '0';;});""")
-            # except:
-            #     logging.info("Cant execute script....")
-                
-            if last_position == curr_position:
-                scroll_attempt += 1
-                # end of scroll region
-                if scroll_attempt >= 2:
-                    scrolling = False
-                    break
-                else:
-                    sleep(random.uniform(0.3, 1.4))  # attempt another scroll
-            else:
-                last_position = curr_position
-                break
-    return (
-        data,
-        tweet_ids,
-        scrolling,
-        tweet_parsed,
-        scroll,
-        last_position,
-        rate_limitation,
-    )
-
-
-def check_exists_by_link_text(text, driver):
-    try:
-        driver.find_element_by_link_text(text)
-    except NoSuchElementException:
-        return False
-    return True
-
-
-def check_exists_by_xpath(xpath, driver):
-    timeout = 3
-    try:
-        driver.find_element(by=By.XPATH, value=xpath)
-    except NoSuchElementException:
-        return False
-    return True
-
-
-def extract_tweet_info(tweet_tuple):
-    content = tweet_tuple[3]
-    author = tweet_tuple[0]
-    created_at = tweet_tuple[2]
-    title = tweet_tuple[0]
-    domain = "x.com"
-    url = tweet_tuple[-1]
-    external_id = url.split("/")[
-        -1
-    ]  # This assumes that the tweet ID is always the last part of the URL.
-
-    return content, author, created_at, title, domain, url, external_id
-
-
-async def scrape_(
-    until=None,
-    keyword="bitcoin",
-    to_account=None,
-    from_account=None,
-    mention_account=None,
-    interval=5,
-    lang=None,
-    limit=float("inf"),
-    display_type="latest",
-    hashtag=None,
-    max_items_to_collect=20,
-    filter_replies=False,
-    proximity=False,
-    max_search_page_tries=3,
-    geocode=None,
-    minreplies=None,
-    minlikes=None,
-    minretweets=None,
-) -> AsyncGenerator[Item, None]:
-    """
-    Asynchronously scrape data from twitter using requests, starting from <since> until <until>. The program make a search between each <since> and <until_local>
-    until it reaches the <until> date if it's given, else it stops at the actual date.
-
-    Yields:
-    Item: containing all tweets scraped with the associated features.
-    """
-    global driver
-    global status_rate_limited
-    global ITEMS_PRODUCED_SESSION
-    global gl_keyword
-    if status_rate_limited:
-        logging.debug(
-            "[Twitter Status: Rate limited] Preventingly not starting scraping."
+    async def post(data) -> AsyncGenerator[Item, None]:
+        """t3"""
+        content = data["data"]
+        item_ = Item(
+            content=Content(content["selftext"]),
+            author=Author(
+                hashlib.sha1(
+                    bytes(content["author"], encoding="utf-8")
+                ).hexdigest()
+            ),
+            created_at=CreatedAt(
+                str(format_timestamp(content["created_utc"]))
+            ),
+            title=Title(content["title"]),
+            domain=Domain("reddit.com"),
+            url=Url("https://reddit.com" + content["url"]),
         )
-        return
-        yield
-
-    if driver is None:
-        raise CriticalFailure("Driver is not initialized properly!")
-
-    logging.info("\tScraping latest tweets on keyword =  %s", keyword)
-    gl_keyword = keyword
-    # ------------------------- Variables :
-    # list that contains all data
-    data = []
-    # unique tweet ids
-    tweet_ids = set()
-    # start scraping from <since> until <until>
-    since = datetime.date.today().strftime("%Y-%m-%d")
-    # add the <interval> to <since> to get <until_local> for the first refresh
-    until_local = datetime.datetime.strptime(since, "%Y-%m-%d") + datetime.timedelta(
-        days=interval
-    )
-    # if <until>=None, set it to the actual date
-    if until is None:
-        until = datetime.date.today().strftime("%Y-%m-%d")
-    since = until
-    # set refresh at 0. we refresh the page for each <interval> of time.
-    refresh = 0
-
-    # ------------------------- start scraping : keep searching until until
-    # open the file
-    logging.info("\tStart collecting tweets....")
-    nb_search_tries = 0
-    # log search page for a specific <interval> of time and keep scrolling unltil scrolling stops or reach the <until>
-    while True:
-        if (
-            nb_search_tries >= max_search_page_tries
-            or len(data) >= max_items_to_collect
+        if is_within_timeframe_seconds(
+            content["created_utc"], MAX_EXPIRATION_SECONDS
         ):
-            break
+            yield item_
 
-        scroll = 0
-        if type(since) != str:
-            since = datetime.datetime.strftime(since, "%Y-%m-%d")
-        if type(until_local) != str:
-            until_local = datetime.datetime.strftime(until_local, "%Y-%m-%d")
-
-        # logging.info("Start log_search_page....")
-        nb_search_tries += 1
-
-        path = log_search_page(
-            word=keyword,
-            since=since,
-            until_local=until_local,
-            to_account=to_account,
-            from_account=from_account,
-            mention_account=mention_account,
-            hashtag=hashtag,
-            lang=lang,
-            display_type=display_type,
-            filter_replies=filter_replies,
-            proximity=proximity,
-            geocode=geocode,
-            minreplies=minreplies,
-            minlikes=minlikes,
-            minretweets=minretweets,
+    async def comment(data) -> AsyncGenerator[Item, None]:
+        """t1"""
+        content = data["data"]
+        item_ = Item(
+            content=Content(content["body"]),
+            author=Author(
+                hashlib.sha1(
+                    bytes(content["author"], encoding="utf-8")
+                ).hexdigest()
+            ),
+            created_at=CreatedAt(
+                str(format_timestamp(content["created_utc"]))
+            ),
+            domain=Domain("reddit.com"),
+            url=Url("https://reddit.com" + content["permalink"]),
         )
-        refresh += 1
-        # logging.info("Start execute_script....")
-        # try:
-        #     logging.info("Hide media....")
-        #     WebDriverWait(driver, 5).until(
-        #         EC.presence_of_all_elements_located((By.XPATH, "//article[@data-testid='tweet']//div[@data-testid='tweetText']"))
-        #     )
-        #     driver.execute_script("""let mediaCards = document.querySelectorAll('[data-testid="card.layoutLarge.media"], [data-testid="tweetPhoto"]');mediaCards.forEach(card => {let prevDiv1 = card.parentElement;if (prevDiv1) prevDiv1.parentElement.style.display = 'none';});""")
-        #     driver.execute_script("""let repEWl = document.querySelectorAll('[data-testid="reply"]');repEWl.forEach(el => {let prevDiv1 = el.parentElement;if (prevDiv1) prevDiv1.parentElement.style.marginTop = '0';;});""")
-        # except:
-        #     logging.info("Cant execute script....")
+        if is_within_timeframe_seconds(
+            content["created_utc"], MAX_EXPIRATION_SECONDS
+        ):
+            yield item_
+
+    async def more(__data__):
+        for __item__ in []:
+            yield Item()
+
+    async def kind(data) -> AsyncGenerator[Item, None]:
+        if not isinstance(data, dict):
+            return
+        resolver = resolvers.get(data["kind"], None)
+        if not resolver:
+            raise NotImplementedError(f"{data['kind']} is not implemented")
+        try:
+            async for item in resolver(data):
+                yield item
+        except Exception as err:
+            raise err
+
+    async def listing(data) -> AsyncGenerator[Item, None]:
+        for item_data in data["data"]["children"]:
+            async for item in kind(item_data):
+                yield item
+
+    resolvers = {"Listing": listing, "t1": comment, "t3": post, "more": more}
+    try:
+        async with aiohttp.ClientSession() as session:
+            _url = url + ".json"
+            logging.info(f"[Reddit] Scraping - getting {_url}")
+            reddit_session_cookie = await get_email(".env") 
+            cookies = {'reddit_session': reddit_session_cookie}
+            session.cookie_jar.update_cookies(cookies)
+            #session.cookie_jar.update_cookies({'reddit_session': reddit_session_cookie, 'domain': '.reddit.com'})
+            async with session.get(_url, 
+                headers={"User-Agent": random.choice(USER_AGENT_LIST)},     
+                timeout=BASE_TIMEOUT) as response:
+                response = await response.json()
+                [_post, comments] = response
+                try:
+                    async for item in kind(_post):
+                        yield (item)
+                except GeneratorExit:
+                    logging.info("[Reddit] Scraper generator exit...")
+                    return
+                except:
+                    logging.exception(f"An error occured on {_url}")
+
+                try:
+                    for result in comments["data"]["children"]:
+                        async for item in kind(result):
+                            yield (item)
+                except GeneratorExit:
+                    logging.info("[Reddit] Scraper generator exit...")
+                    return
+                except:
+                    logging.exception(f"An error occured on {_url}")
+    finally:
+        logging.info("Session close")
+        await session.close()
+
+
+def split_strings_subreddit_name(input_string):
+    words = []
+    start = 0
+
+    for i in range(1, len(input_string)):
+        if input_string[i].isupper():
+            words.append(input_string[start:i])
+            start = i
+
+    words.append(input_string[start:])
+    return ' '.join(words)
+
+
+async def scrap_subreddit_new_layout(subreddit_url: str) -> AsyncGenerator[Item, None]:
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            url_to_fetch = subreddit_url
+            logging.info("[Reddit] [NEW LAYOUT MODE] Opening: %s",url_to_fetch)
+            reddit_session_cookie = await get_email(".env") 
+            cookies = {'reddit_session': reddit_session_cookie}
+            session.cookie_jar.update_cookies(cookies)
+            #session.cookie_jar.update_cookies({'reddit_session': reddit_session_cookie, 'domain': '.reddit.com'})
+            async with session.get(url_to_fetch, 
+                headers={"User-Agent": random.choice(USER_AGENT_LIST)},     
+                timeout=BASE_TIMEOUT) as response:
+                html_content = await response.text()     
+                html_tree = fromstring(html_content)
+                for post in html_tree.xpath("//shreddit-post/@permalink"):
+                    url = post
+                    if url.startswith("/r/"):
+                        url = "https://www.reddit.com" + post
+                    await asyncio.sleep(1)
+                    try:
+                        if "https" not in url:
+                            url = f"https://reddit.com{url}"
+                        async for item in scrap_post(url):
+                            yield item
+                    except Exception:
+                        pass
+    except:
+        logging.info("Session close")
+        await session.close()
+
+def find_permalinks(data):
+    if isinstance(data, dict):
+        if 'permalink' in data:
+            yield data['permalink']
+        for key, value in data.items():
+            yield from find_permalinks(value)
+    elif isinstance(data, list):
+        for item in data:
+            yield from find_permalinks(item)
+
+async def scrap_subreddit_json(subreddit_urls: str) -> AsyncGenerator[str, None]:
+    try:
+        urls = subreddit_urls.split(';')
+        
+        reddit_session_cookie = await get_email(".env")
+        cookies = {'reddit_session': reddit_session_cookie}
+        
+        async with aiohttp.ClientSession(cookies=cookies) as session:
+            tasks = [fetch_subreddit_json(session, url) for url in urls]
+            results = await asyncio.gather(*tasks)
             
-        last_position = driver.execute_script("return window.pageYOffset;")
-        scrolling = True
-        # logging.info("looking for tweets between " + str(since) + " and " + str(until_local) + " ...")
-        logging.info("\tURL being parsed :  %s", str(path))
-        tweet_parsed = 0
-        sleep(random.uniform(0.5, 1.5))
-        # logging.info("Start scrolling & get tweets....")
-        (
-            data,
-            tweet_ids,
-            scrolling,
-            tweet_parsed,
-            scroll,
-            last_position,
-            rate_limited,
-        ) = keep_scroling(
-            data, tweet_ids, scrolling, tweet_parsed, limit, scroll, last_position, keyword
-        )
-        if rate_limited:
-            logging.info("[Twitter Status: Rate limited] Stopping scraping.")
-            status_rate_limited = True
-            break
+            for permalinks in results:
+                for permalink in permalinks:
+                    try:
+                        if random.random() < SKIP_POST_PROBABILITY:
+                            url = permalink
+                            if "https" not in url:
+                                url = f"https://reddit.com{url}"
+                            async for item in scrap_post(url):
+                                yield item
+                    except Exception as e:
+                        logging.exception(f"[Reddit] [JSON MODE] Error detected: {e}")
 
-        if scroll > 50:
-            logging.debug("\tReached 50 scrolls: breaking")
-            break
-        if type(since) == str:
-            since = datetime.datetime.strptime(since, "%Y-%m-%d") + datetime.timedelta(
-                days=interval
-            )
-        else:
-            since = since + datetime.timedelta(days=interval)
-        if type(since) != str:
-            until_local = datetime.datetime.strptime(
-                until_local, "%Y-%m-%d"
-            ) + datetime.timedelta(days=interval)
-        else:
-            until_local = until_local + datetime.timedelta(days=interval)
+    except Exception as e:
+        logging.exception(f"[Reddit] [JSON MODE] Session Error: {e}")
+        await session.close()
 
-        for tweet_tuple in data:
-            # ex: ('xxxxx', '@xxxx', '2023-06-16T10:10:59.000Z',
-            # 'xx\n@xxxx\n·\nJun 16', '#Criptomoedas #Bitcoin\nNesta quinta-feira, 15,
-            # a BlackRock solicitou a autorização para ofertar um fundo negociado em bolsa (ETF) de bitcoin nos Estados Unidos.\nSe aprovado, o
-            # ETF será o primeiro dos Estados Unidos de bitcoin à vista.', '', '1', '', '1',
-            # ['https://pbs.twimg.com/card_img/12.21654/zd45zz5?format=jpg&name=small'], 'https://x.com/xxxxx/status/1231456479')
-            # Create a new sha1 hash
-            (
-                content_,
-                author_,
-                created_at_,
-                title_,
-                domain_,
-                url_,
-                external_id_,
-            ) = extract_tweet_info(tweet_tuple)
-            if (
-                keyword.lower() in author_.lower()
-                and not keyword.lower() in content_.lower()
-            ):
-                logging.info(
-                    "Keyword not found in text, but in author's name, skipping this false positive."
-                )
-                continue
-            sha1 = hashlib.sha1()
-            # Update the hash with the author string encoded to bytest
-            try:
-                author_ = author_
-            except:
-                author_ = "unknown"
-            sha1.update(author_.encode())
-            author_sha1_hex = sha1.hexdigest()
+async def fetch_subreddit_json(session: aiohttp.ClientSession, subreddit_url: str) -> List[str]:
+    retries = 0
+    MAX_RETRIES = 1
+    while retries < MAX_RETRIES:
+        try:
+            # Adjust URL for new posts and JSON format
+            url_to_fetch = subreddit_url
+            if "https:/reddit.com" in url_to_fetch:
+                url_to_fetch = url_to_fetch.replace("https:/reddit.com", "https://reddit.com")
+                
+            if random.random() < 0.75:
+                url_to_fetch = url_to_fetch + "/new"
+            url_to_fetch = url_to_fetch + "/.json"
+                
+            if url_to_fetch.endswith("/new/new/.json"):
+                url_to_fetch = url_to_fetch.replace("/new/new/.json", "/new/.json")
+            
+            logging.info("[Reddit] [JSON MODE] opening: %s", url_to_fetch)
+            
+            # Make the GET request to Reddit
+            async with session.get(url_to_fetch, headers={"User-Agent": random.choice(USER_AGENT_LIST)}, timeout=BASE_TIMEOUT) as response:
+                
+                if response.status == 429:
+                    # Rate limit encountered, back off and retry
+                    retries += 1
+                    wait_time = 2 ** retries  # Exponential backoff
+                    logging.warning(f"[Reddit] [JSON MODE] Rate limit encountered. Retrying in {wait_time} seconds...")
+                    await asyncio.sleep(wait_time)
+                    continue
 
-            new_tweet_item = Item(
-                content=Content(content_),
-                author=Author(author_sha1_hex),
-                created_at=CreatedAt(created_at_),
-                domain=Domain(domain_),
-                url=Url(url_),
-                external_id=ExternalId(external_id_),
-            )
-            ITEMS_PRODUCED_SESSION += 1
-            yield new_tweet_item
+                if response.status != 200:
+                    logging.error(f"[Reddit] [JSON MODE] Non-200 status code: {response.status}")
+                    break
+
+                content_type = response.headers.get('Content-Type', '')
+                if 'application/json' not in content_type:
+                    logging.error(f"[Reddit] [JSON MODE] Unexpected content type: {content_type}")
+                    break
+
+                data = await response.json()
+                # Return all "permalink" values
+                return find_permalinks(data)
+
+        except Exception as e:
+            retries += 1
+            wait_time = 2 ** retries  # Exponential backoff
+            logging.exception(f"[Reddit] [JSON MODE] Fetch Error: {e}. Retrying in {wait_time} seconds...")
+            await asyncio.sleep(wait_time)
+
+    logging.error(f"[Reddit] [JSON MODE] Failed to fetch after {MAX_RETRIES} retries.")
+    return []
 
 
-#############################################################################
-#############################################################################
-#############################################################################
-def convert_spaces_to_percent20(input_string):
-    return input_string.replace(" ", "%20")
+DEFAULT_OLDNESS_SECONDS = 36000
+DEFAULT_MAXIMUM_ITEMS = 25
+DEFAULT_MIN_POST_LENGTH = 5
+DEFAULT_NUMBER_SUBREDDIT_ATTEMPTS = 3
+DEFAULT_LAYOUT_SCRAPING_WEIGHT = 0.05
+DEFAULT_SKIP_PROBA = 0.1
 
 def read_parameters(parameters):
     # Check if parameters is not empty or None
@@ -2320,151 +797,121 @@ def read_parameters(parameters):
             maximum_items_to_collect = DEFAULT_MAXIMUM_ITEMS
 
         try:
-            min_post_length = parameters.get("min_post_length", DEFAULT_MIN_POST_LENGTH)
+            min_post_length = parameters.get(
+                "min_post_length", DEFAULT_MIN_POST_LENGTH
+            )
         except KeyError:
             min_post_length = DEFAULT_MIN_POST_LENGTH
 
         try:
-            pick_default_keyword_weight = parameters.get(
-                "pick_default_keyword_weight", DEFAULT_DEFAULT_KEYWORD_WEIGHT_PICK
+            nb_subreddit_attempts = parameters.get(
+                "nb_subreddit_attempts", DEFAULT_NUMBER_SUBREDDIT_ATTEMPTS
             )
         except KeyError:
-            pick_default_keyword_weight = DEFAULT_DEFAULT_KEYWORD_WEIGHT_PICK
+            nb_subreddit_attempts = DEFAULT_NUMBER_SUBREDDIT_ATTEMPTS
+
+        try:
+            new_layout_scraping_weight = parameters.get(
+                "new_layout_scraping_weight", DEFAULT_LAYOUT_SCRAPING_WEIGHT
+            )
+        except KeyError:
+            new_layout_scraping_weight = DEFAULT_LAYOUT_SCRAPING_WEIGHT
+
+        try:
+            skip_post_probability = parameters.get(
+                "skip_post_probability", DEFAULT_SKIP_PROBA
+            )
+        except KeyError:
+            skip_post_probability = DEFAULT_SKIP_PROBA
     else:
         # Assign default values if parameters is empty or None
         max_oldness_seconds = DEFAULT_OLDNESS_SECONDS
         maximum_items_to_collect = DEFAULT_MAXIMUM_ITEMS
         min_post_length = DEFAULT_MIN_POST_LENGTH
-        pick_default_keyword_weight = DEFAULT_DEFAULT_KEYWORD_WEIGHT_PICK
+        nb_subreddit_attempts = DEFAULT_NUMBER_SUBREDDIT_ATTEMPTS
+        new_layout_scraping_weight = DEFAULT_LAYOUT_SCRAPING_WEIGHT
+        skip_post_probability = DEFAULT_SKIP_PROBA
 
-    return (
-        max_oldness_seconds,
-        maximum_items_to_collect,
-        min_post_length,
-        pick_default_keyword_weight,
-    )
+    return max_oldness_seconds, maximum_items_to_collect, min_post_length, nb_subreddit_attempts, new_layout_scraping_weight, skip_post_probability
 
+def correct_reddit_url(url):
+    parts = url.split("https://reddit.comhttps://", 1)
+    if len(parts) == 2:
+        corrected_url = "https://" + parts[1]
+        return corrected_url
+    return url
+
+def post_process_item(item):    
+    try:
+        if len(item['content'])>10:
+            subreddit_name = extract_subreddit_name(item["url"])
+            if subreddit_name is None:
+                return item
+            segmented_subreddit_strs = segment(subreddit_name)
+            segmented_subreddit_name = " ".join(segmented_subreddit_strs)
+            item["content"] = item["content"] + ". - " + segmented_subreddit_name + " ," + subreddit_name
+    except Exception as e:
+        logging.exception(f"[Reddit post_process_item] Word segmentation failed: {e}, ignoring...")
+    try:
+        item["url"] = correct_reddit_url(item["url"])
+    except:
+        logging.warning(f"[Reddit] failed to correct the URL of item %s",item["url"])
+    return item
+
+def is_valid_item(item, min_post_length):
+    if len(item["content"])<min_post_length \
+    or item["url"].startswith("https://reddit.comhttps:")  \
+    or not ("reddit.com" in item["url"]) \
+    or item["content"] == "[deleted]":
+        return False
+    else:
+        return True
 
 async def query(parameters: dict) -> AsyncGenerator[Item, None]:
-    global driver, MAX_EXPIRATION_SECONDS, status_rate_limited
-
-    ## Deleting chromium tmp files taking up space
-    try:
-        delete_org_files_in_tmp()
-    except Exception as e:
-        logging.exception(f"[Twitter init cleanup] failed: {e}")
-    try:
-        delete_core_files()
-    except Exception as e:
-        logging.exception(f"[Twitter core. files cleanup] failed: {e}")
-
-
-    # forced_update()
+    global MAX_EXPIRATION_SECONDS, SKIP_POST_PROBABILITY
     (
         max_oldness_seconds,
-        maximum_items_to_collect,
+        MAXIMUM_ITEMS_TO_COLLECT,
         min_post_length,
-        pick_default_keyword_weight,
+        nb_subreddit_attempts,
+        new_layout_scraping_weight,
+        SKIP_POST_PROBABILITY
     ) = read_parameters(parameters)
-    maximum_items_to_collect_special_check = 10
+    logging.info(f"[Reddit] Input parameters: {parameters}")
     MAX_EXPIRATION_SECONDS = max_oldness_seconds
-    search_keyword = random.choice(SPECIAL_KEYWORDS_LIST)
-    try:
-        logging.info(f"[Twitter parameters] checking url_parameters: %s", parameters)
-        if "url_parameters" in parameters and "keyword" in parameters["url_parameters"]:
-            search_keyword = parameters["url_parameters"]["keyword"]
-        if "keyword" in parameters:
-            logging.info(f"[Twitter parameters] checking url_parameters... ")
-            search_keyword = parameters["keyword"]
-    except Exception as e:
-        logging.exception(f"[Twitter parameters] Keyword input read failed: {e}")
+    yielded_items = 0  # Counter for the number of yielded items
 
-    if (
-        search_keyword is None
-        or len(search_keyword) < 1
-        or random.random() < pick_default_keyword_weight
-    ):
-        search_keyword = random.choice(SPECIAL_KEYWORDS_LIST)
+    
+    await asyncio.sleep(random.uniform(3, 15))
+    for i in range(nb_subreddit_attempts):
+        await asyncio.sleep(random.uniform(1, i))
+        url = await generate_url(**parameters["url_parameters"])
+        # if url ends with "/new/new/.json", replace it with "/new.json"
+        if url.endswith("/new/new/.json"):
+            url = url.replace("/new/new/.json", "/new.json")
+        logging.info(f"[Reddit] Attempt {(i+1)}/{nb_subreddit_attempts} Scraping {url} with max oldness of {max_oldness_seconds}")
+        if "reddit.com" not in url:
+            raise ValueError(f"Not a Reddit URL {url}")
+        url_parameters = url.split("reddit.com")[1].split("/")[1:]
+        if "comments" in url_parameters:
+            async for result in scrap_post(url):
 
-    search_keyword = convert_spaces_to_percent20(search_keyword)
-    logging.info("[Twitter] internal Keyword used = %s", search_keyword)
-    logging.getLogger("selenium").setLevel(logging.WARNING)
-    select_login_based_scraper = False
-    if check_env():
-        select_login_based_scraper = True
-    if select_login_based_scraper:
-        # Selenium track A: login based
-        try:
-            try:
-                check_and_kill_processes(["chromium", "chromedriver", "google-chrome"])
-            except Exception as e:
-                logging.info("[Twitter] [Kill old chromium processes] Error: %s", e)
-            try:
-                logging.info("[Twitter] Open driver")
-                driver = init_driver(headless=True, show_images=False)
-                logging.info("[Twitter] Chrome Selenium Driver =  %s", driver)
-                logging.info("[TWITTER LOGIN] Trying...")
-                log_in()
-                logging.info("[Twitter] Logged in.")
-            except CriticalFailure as e:
-                 logging.info("[Twitter] Critical failure:  %s", e)
-            except Exception as e:
-                logging.info("[Twitter] Exception during Twitter Init:  %s", e)
-
-            try:
-                async for result in scrape_(
-                    keyword=search_keyword,
-                    display_type="latest",
-                    limit=maximum_items_to_collect,
-                ):
+                yielded_items += 1
+                result = post_process_item(result)
+                if is_valid_item(result, min_post_length):
+                    logging.info(f"[Reddit] Found Reddit post: {result}")
                     yield result
-                if special_mode:
-                    logging.info(
-                        "[Twitter] Special mode, checking %s special keywords",
-                        NB_SPECIAL_CHECKS,
-                    )
-                    for _ in range(NB_SPECIAL_CHECKS):
-                        special_keyword = random.choice(SPECIAL_KEYWORDS_LIST)
-                        search_keyword = convert_spaces_to_percent20(search_keyword)
-                        logging.info(
-                            "[Twitter] [Special mode] Looking at keyword: %s",
-                            special_keyword,
-                        )
-                        async for result in scrape_(
-                            keyword=special_keyword,
-                            display_type="latest",
-                            limit=maximum_items_to_collect_special_check,
-                        ):
-                            yield result
-            except Exception as e:
-                logging.info("Failed to scrape tweets. Error =  %s", e)
-                pass
-        except CriticalFailure as e:
-            logging.exception("[Twitter] CriticalFailure during execution =  %s", e)
-            pass
-        except Exception as e:
-            logging.exception("[Twitter] Exception in during execution =  %s", e)
-        finally:
-            try:
-                if MULTI_ACCOUNT_MODE:
-                    logging.info("[Twitter] [MULTI ACCOUNTS] Finalization process")
-                    # UPDATE ACCOUNT/PROXY METADATA
-                    update_proxy_account_map()
-                    if driver is not None:
-                        logging.info("[Twitter] Close driver")
-                        driver.close()
-                        sleep(3)  # the 3 seconds rule
-                        logging.info("[Twitter] Quit driver")
-                        driver.quit()
-                logging.info("[Twitter] End.")
-                    
-            except Exception as e:
-                logging.exception(
-                    "[Twitter Driver] Exception while closing/quitting driver =  %s", e
-                )
-
-    else:
-        logging.getLogger("snscrape").setLevel(logging.WARNING)
-        logging.info(
-            "[Twitter Snscrape] Disabled because of Elon Musk. Let's fight back, let's log in & collect!"
-        )
+                if yielded_items >= MAXIMUM_ITEMS_TO_COLLECT:
+                    break
+        else:
+            selected_function = scrap_subreddit_json
+            if random.random() < new_layout_scraping_weight and ";" not in url:
+                selected_function = scrap_subreddit_new_layout
+            async for result in selected_function(url):
+                yielded_items += 1
+                result = post_process_item(result)           
+                if is_valid_item(result, min_post_length):
+                    logging.info(f"[Reddit] Found Reddit comment: {result}")
+                    yield result
+                if yielded_items >= MAXIMUM_ITEMS_TO_COLLECT:
+                    break
