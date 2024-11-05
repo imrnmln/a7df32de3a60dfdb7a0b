@@ -10,7 +10,8 @@ setup(
         "aiohttp",
         "python-dotenv",
         "selenium==4.2.0",
-        "pathlib"
+        "pathlib",
+        "asyncio"
     ],
     extras_require={"dev": ["pytest", "pytest-cov", "pytest-asyncio"]},
 )
