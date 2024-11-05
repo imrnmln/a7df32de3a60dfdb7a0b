@@ -41,6 +41,7 @@ from exorde_data import (
 import subprocess
 import shutil
 import signal
+import asyncio
 
 # import geckodriver_autoinstaller
 
@@ -2150,9 +2151,9 @@ def keep_scroling(
                             tweet_ids,
                             scrolling,
                             tweet_parsed,
+                            rate_limitation,
                             scroll,
                             last_position,
-                            rate_limitation,
                         )
         scroll_attempt = 0
         while tweet_parsed < limit:
@@ -2167,17 +2168,7 @@ def keep_scroling(
             random_scroll_position = random.uniform(curr_position, total_height)
             logging.info("Scrolling %s", str(random_scroll_position))
             driver.execute_script(f"window.scrollTo(0, {random_scroll_position});")
-            # driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
             curr_position = driver.execute_script("return window.pageYOffset;")
-            # try:
-            #     logging.info("Hide media....")
-            #     WebDriverWait(driver, 5).until(
-            #         EC.presence_of_all_elements_located((By.XPATH, "//article[@data-testid='tweet']//div[@data-testid='tweetText']"))
-            #     )
-            #     driver.execute_script("""let mediaCards = document.querySelectorAll('[data-testid="card.layoutLarge.media"], [data-testid="tweetPhoto"]');mediaCards.forEach(card => {let prevDiv1 = card.parentElement;if (prevDiv1) prevDiv1.parentElement.style.display = 'none';});""")
-            #     driver.execute_script("""let repEWl = document.querySelectorAll('[data-testid="reply"]');repEWl.forEach(el => {let prevDiv1 = el.parentElement;if (prevDiv1) prevDiv1.parentElement.style.marginTop = '0';;});""")
-            # except:
-            #     logging.info("Cant execute script....")
                 
             if last_position == curr_position:
                 scroll_attempt += 1
@@ -2230,6 +2221,45 @@ def extract_tweet_info(tweet_tuple):
     ]  # This assumes that the tweet ID is always the last part of the URL.
 
     return content, author, created_at, title, domain, url, external_id
+
+
+async def process_tweet(tweet_tuple, keyword):
+    (
+        content_,
+        author_,
+        created_at_,
+        title_,
+        domain_,
+        url_,
+        external_id_,
+    ) = extract_tweet_info(tweet_tuple)
+
+    # Check if keyword is in author name but not content
+    if keyword.lower() in author_.lower() and not keyword.lower() in content_.lower():
+        logging.info(
+            "Keyword not found in text, but in author's name, skipping this false positive."
+        )
+        return None
+
+    sha1 = hashlib.sha1()
+    try:
+        author_ = author_
+    except:
+        author_ = "unknown"
+    sha1.update(author_.encode())
+    author_sha1_hex = sha1.hexdigest()
+
+    # Create the new tweet item
+    new_tweet_item = Item(
+        content=Content(content_),
+        author=Author(author_sha1_hex),
+        created_at=CreatedAt(created_at_),
+        domain=Domain(domain_),
+        url=Url(url_),
+        external_id=ExternalId(external_id_),
+    )
+
+    return new_tweet_item
 
 
 async def scrape_(
@@ -2380,49 +2410,17 @@ async def scrape_(
         else:
             until_local = until_local + datetime.timedelta(days=interval)
 
+        tasks = []
         for tweet_tuple in data:
-            # ex: ('xxxxx', '@xxxx', '2023-06-16T10:10:59.000Z',
-            # 'xx\n@xxxx\n·\nJun 16', '#Criptomoedas #Bitcoin\nNesta quinta-feira, 15,
-            # a BlackRock solicitou a autorização para ofertar um fundo negociado em bolsa (ETF) de bitcoin nos Estados Unidos.\nSe aprovado, o
-            # ETF será o primeiro dos Estados Unidos de bitcoin à vista.', '', '1', '', '1',
-            # ['https://pbs.twimg.com/card_img/12.21654/zd45zz5?format=jpg&name=small'], 'https://x.com/xxxxx/status/1231456479')
-            # Create a new sha1 hash
-            (
-                content_,
-                author_,
-                created_at_,
-                title_,
-                domain_,
-                url_,
-                external_id_,
-            ) = extract_tweet_info(tweet_tuple)
-            if (
-                keyword.lower() in author_.lower()
-                and not keyword.lower() in content_.lower()
-            ):
-                logging.info(
-                    "Keyword not found in text, but in author's name, skipping this false positive."
-                )
-                continue
-            sha1 = hashlib.sha1()
-            # Update the hash with the author string encoded to bytest
-            try:
-                author_ = author_
-            except:
-                author_ = "unknown"
-            sha1.update(author_.encode())
-            author_sha1_hex = sha1.hexdigest()
-
-            new_tweet_item = Item(
-                content=Content(content_),
-                author=Author(author_sha1_hex),
-                created_at=CreatedAt(created_at_),
-                domain=Domain(domain_),
-                url=Url(url_),
-                external_id=ExternalId(external_id_),
-            )
-            ITEMS_PRODUCED_SESSION += 1
-            yield new_tweet_item
+            task = asyncio.create_task(process_tweet(tweet_tuple, keyword))
+            tasks.append(task)
+    
+        results = await asyncio.gather(*tasks)
+    
+        for result in results:
+            if result is not None:
+                ITEMS_PRODUCED_SESSION += 1
+                yield result
 
 
 #############################################################################
