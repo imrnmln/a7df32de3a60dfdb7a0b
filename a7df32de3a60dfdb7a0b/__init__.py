@@ -1857,7 +1857,7 @@ def log_search_page(
         + proximity
     )
     driver.get(path)
-    sleep(1)
+    sleep(0.5)
 
     if "i/flow/login" in driver.current_url:
         logging.info("[TWITTER] Problem detected, interrupting session early.")
@@ -1922,7 +1922,7 @@ def log_in(env=".env", wait=1.2):
     target_home = "x.com/home"
     target_bis = "redirect_after_login=%2Fhome"
     driver.get("https://www.x.com/")
-    sleep(1)
+    sleep(0.5)
     email = get_email(env)  # const.EMAIL
     password = get_password(env)  # const.PASSWORD
     username = get_username(env)  # const.USERNAME
@@ -1940,19 +1940,16 @@ def log_in(env=".env", wait=1.2):
         logging.exception("An error occured retrieving cookies: %s", e)
 
     sleep(random.uniform(0, 1))
-    logging.info("[Twitter Chrome] refreshing to Home after cookie import.")
-    sleep(random.uniform(0, 1))
     driver.get(target_home_url)
     logging.info("[Twitter Chrome] Checking if we are on same URL...")
-    sleep(random.uniform(0, 2))
     # Check if we are indeed on the target URL
     logging.info("[Twitter Chrome] Current URL = %s", str(driver.current_url))
     # Target bis reached
     if target_bis in driver.current_url:
-        sleep(random.uniform(0, 2))
+        sleep(random.uniform(0, 0.5))
         logging.info("[Twitter Chrome] Found ourselves on target bis, retying..")
         driver.get(target_home_url)
-        sleep(random.uniform(0, 1))
+        sleep(random.uniform(0, 0.5))
 
     # email = data["mail"]  # const.EMAIL
     # password = data["password"]  # const.PASSWORD
@@ -2082,7 +2079,7 @@ def keep_scroling(
     rate_limitation = False
     successsive_old_tweets = 0
     while scrolling and tweet_parsed < limit:
-        sleep(random.uniform(0.5, 1.5))
+        sleep(random.uniform(0.2, 0.7))
         # get the card of tweets
         page_cards = driver.find_elements(
             by=By.XPATH, value='//article[@data-testid="tweet"]'
@@ -2159,7 +2156,7 @@ def keep_scroling(
         while tweet_parsed < limit:
             # check scroll position
             scroll += 1
-            sleep(random.uniform(0.5, 1.5))
+            sleep(random.uniform(0.2, 0.7))
             # get current position and total scroll height
             curr_position = driver.execute_script("return window.pageYOffset;")
             total_height = driver.execute_script("return document.body.scrollHeight;")
@@ -2177,7 +2174,7 @@ def keep_scroling(
                     scrolling = False
                     break
                 else:
-                    sleep(random.uniform(0.3, 1.4))  # attempt another scroll
+                    sleep(random.uniform(0.3, 0.8))  # attempt another scroll
             else:
                 last_position = curr_position
                 break
@@ -2376,7 +2373,7 @@ async def scrape_(
         # logging.info("looking for tweets between " + str(since) + " and " + str(until_local) + " ...")
         logging.info("\tURL being parsed :  %s", str(path))
         tweet_parsed = 0
-        sleep(random.uniform(0.5, 1.5))
+        sleep(random.uniform(0.5, 1))
         # logging.info("Start scrolling & get tweets....")
         (
             data,
