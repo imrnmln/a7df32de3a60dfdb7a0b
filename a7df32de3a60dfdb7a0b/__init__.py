@@ -2107,7 +2107,7 @@ def keep_scroling(
                 logging.info(
                     "********\n********\n********\n\t\tYOUR TWITTER ACCOUNT IS NOW RATE LIMITED\n\n********\n********\n********"
                 )
-                rate_limitation = True
+                rate_limitation = False
                 RATE_LIMITED = True
                 raise RateLimited("Twitter Account Viewing Rate Limit Exceeded")
 
@@ -2151,9 +2151,9 @@ def keep_scroling(
                             tweet_ids,
                             scrolling,
                             tweet_parsed,
-                            rate_limitation,
                             scroll,
                             last_position,
+                            rate_limitation,
                         )
         scroll_attempt = 0
         while tweet_parsed < limit:
