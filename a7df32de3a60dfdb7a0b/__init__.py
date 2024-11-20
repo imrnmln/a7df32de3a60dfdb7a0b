@@ -2,6 +2,7 @@ import os
 import re
 import hashlib
 import random
+import requests
 import datetime
 from datetime import datetime as datett
 from datetime import timedelta, date, timezone
@@ -67,6 +68,8 @@ _USERNAME = None
 _PASSWORD = None
 _COOKIE_FP = None
 driver = None
+
+ONLINE_KW_LIST_URL = "https://raw.githubusercontent.com/exorde-labs/TestnetProtocol/refs/heads/main/targets/keywords.txt"
 
 ##### SPECIAL MODE
 # TOP 222
@@ -1164,7 +1167,7 @@ SPECIAL_KEYWORDS_LIST = [
 DEFAULT_OLDNESS_SECONDS = 120
 DEFAULT_MAXIMUM_ITEMS = 25
 DEFAULT_MIN_POST_LENGTH = 10
-DEFAULT_DEFAULT_KEYWORD_WEIGHT_PICK = 0.5
+DEFAULT_DEFAULT_KEYWORD_WEIGHT_PICK = 0.15
 
 
 user_agents = [
@@ -2246,7 +2249,7 @@ async def scrape_(
     max_items_to_collect=20,
     filter_replies=False,
     proximity=False,
-    max_search_page_tries=3,
+    max_search_page_tries=1,
     geocode=None,
     minreplies=None,
     minlikes=None,
@@ -2473,7 +2476,21 @@ def read_parameters(parameters):
         pick_default_keyword_weight,
     )
 
-
+def fetch_keywords_list() -> list:
+    # Fetch the list of keywords from the online source, ONLINE_KW_LIST_URL
+    try:
+        # remote file is a list of comma-separated keywords
+        response = requests.get(ONLINE_KW_LIST_URL, timeout=1)
+        if response.status_code == 200:
+            keywords_list = response.text.split(",")
+            # remove any empty strings, and strip leading/trailing whitespace, and \n
+            keywords_list = [kw.strip() for kw in keywords_list if kw.strip()]
+            
+            return keywords_list
+    except Exception as e:
+        logging.error(f"Failed to fetch keywords list: {e}")
+        return None
+    
 async def query(parameters: dict) -> AsyncGenerator[Item, None]:
     global driver, MAX_EXPIRATION_SECONDS, status_rate_limited
 
@@ -2497,7 +2514,6 @@ async def query(parameters: dict) -> AsyncGenerator[Item, None]:
     ) = read_parameters(parameters)
     maximum_items_to_collect_special_check = 10
     MAX_EXPIRATION_SECONDS = max_oldness_seconds
-    search_keyword = random.choice(SPECIAL_KEYWORDS_LIST)
     try:
         logging.info(f"[Twitter parameters] checking url_parameters: %s", parameters)
         if "url_parameters" in parameters and "keyword" in parameters["url_parameters"]:
@@ -2507,6 +2523,22 @@ async def query(parameters: dict) -> AsyncGenerator[Item, None]:
             search_keyword = parameters["keyword"]
     except Exception as e:
         logging.exception(f"[Twitter parameters] Keyword input read failed: {e}")
+
+    
+    # try fetching from the online source
+    try:
+        logging.info(f"[Twitter] fetching keywords list from {ONLINE_KW_LIST_URL}")
+        keywords_list = fetch_keywords_list()
+    except Exception as e:
+        logging.exception(f"[Twitter] Keywords list fetch failed: {e}")
+        keywords_list = None
+
+    if keywords_list is not None and keywords_list != []:
+        search_keyword = random.choice(keywords_list)
+        logging.info(f"[Twitter parameters] using online keyword: {search_keyword}")
+        # if it fails, use a base keyword
+    else:
+        search_keyword = None
 
     if (
         search_keyword is None
@@ -2549,18 +2581,24 @@ async def query(parameters: dict) -> AsyncGenerator[Item, None]:
                     yield result
                 if special_mode:
                     logging.info(
-                        "[Twitter] Special mode, checking %s special keywords",
+                        "[Twitter] Checking %s special keywords",
                         NB_SPECIAL_CHECKS,
                     )
                     for _ in range(NB_SPECIAL_CHECKS):
-                        special_keyword = random.choice(SPECIAL_KEYWORDS_LIST)
+                        
+                        if keywords_list is not None and keywords_list != []:
+                            search_keyword = random.choice(keywords_list)
+                            logging.info(f"[Twitter parameters] using online keyword: {search_keyword}")
+                            # if it fails, use a base keyword
+                        else:
+                            search_keyword = random.choice(SPECIAL_KEYWORDS_LIST)
                         search_keyword = convert_spaces_to_percent20(search_keyword)
                         logging.info(
-                            "[Twitter] [Special mode] Looking at keyword: %s",
-                            special_keyword,
+                            "[Twitter] [Special] Looking at keyword: %s",
+                            search_keyword,
                         )
                         async for result in scrape_(
-                            keyword=special_keyword,
+                            keyword=search_keyword,
                             display_type="latest",
                             limit=maximum_items_to_collect_special_check,
                         ):
@@ -2593,7 +2631,6 @@ async def query(parameters: dict) -> AsyncGenerator[Item, None]:
                 )
 
     else:
-        logging.getLogger("snscrape").setLevel(logging.WARNING)
         logging.info(
-            "[Twitter Snscrape] Disabled because of Elon Musk. Let's fight back, let's log in & collect!"
+            "[Twitter] You must provide the necessary credentials to use the Twitter scraper."
         )
