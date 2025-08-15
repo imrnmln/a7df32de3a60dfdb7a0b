@@ -9,7 +9,6 @@ setup(
         "exorde_data",
         "aiohttp",
         "python-dotenv",
-        "selenium==4.2.0",
         "pathlib",
         "lxml>=4.9",
         "selenium==4.21.0",
